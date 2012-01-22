@@ -1,0 +1,27 @@
+<html> 
+	<head> 
+		<title>Client Flow Example</title> 
+		<link rel="stylesheet" type="text/css" href="css/main.css" />
+		<link rel="stylesheet" type="text/css" href="css/reset.css" />
+	</head> 
+	<body> 
+		<div id="fb-root"></div>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+		<script src="js/youtubeEmbedBuilder.js"></script>
+		<script src="main.js"></script>
+		<script>
+        (function(d){
+           var js, id = 'facebook-jssdk'; if (d.getElementById(id)) {return;}
+           js = d.createElement('script'); js.id = id; js.async = true;
+           js.src = "//connect.facebook.net/en_US/all.js";
+           d.getElementsByTagName('head')[0].appendChild(js);
+         }(document));
+		</script>
+
+		<fb:login-button autologoutlink="true" data-scope="read_stream"> </fb:login-button>
+
+		<div id="main">
+		</div>
+	</body> 
+</html>
+
