@@ -117,6 +117,9 @@ window.fbAsyncInit = function () {
             });
         },
         start = function (accessToken) {
+	    $("#login").dialog("destroy")
+		    .css({display: 'block', height: '', 'min-height': '', width: ''}) // remove the css that the dialog leaves
+		    .prependTo($('body'));
 	    var groupInfo = getGroupInfo(id, accessToken, function (info) {
 			    $("#grouptitle").html(info.name);
 			    $("#groupdescription").html(info.description);
@@ -247,7 +250,13 @@ window.fbAsyncInit = function () {
     isLoggedIn(function (accessToken) {
         if (accessToken) {
             start(accessToken);
-        }
+        } else {
+		$("#login").dialog({ title: "", modal: true, width: 106, resizable: false, open: function(event, ui) { 
+				$(".ui-dialog").css({width: 106, height: 45});
+				$(".ui-dialog-titlebar-close").hide();
+				$(".ui-dialog-titlebar").hide();
+		}});
+	}
     });
 
     // Load as you scroll
@@ -263,14 +272,7 @@ window.fbAsyncInit = function () {
             return;
         }
 
-        youtubeEmbedBuilder.build(element.link, VIDEO_WIDTH, VIDEO_HEIGHT).dialog({
-            title: element.name,
-            modal: true,
-            closeOnEscape: true,
-            width: 420,
-            height: 378,
-            resizable: false
-        });
+        youtubeEmbedBuilder.build(element.link, VIDEO_WIDTH, VIDEO_HEIGHT).dialog({ title: element.name, modal: true, closeOnEscape: true, width: 420, height: 378, resizable: false });
     });
 
     groupQuery.watermark(id);
@@ -288,4 +290,5 @@ window.fbAsyncInit = function () {
 		    fetch(nextUrl);
 	    }
     });
+
 };
