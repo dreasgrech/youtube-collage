@@ -28,15 +28,17 @@ window.fbAsyncInit = function () {
 	groupQuery = $("#groupquery"),
         lastCtx, // the last canvas context that we drew on
         bodyWidth = $('body').innerWidth(),
-        GROUPID_QUERY = 'groupid',
-        POSTS_PER_ROW = 5,
+        ID_QUERY = 'id',
+        POSTS_PER_ROW = 25,
+	VIDEO_WIDTH = 385,
+	VIDEO_HEIGHT = 315,
         postWidth = Math.floor(bodyWidth / POSTS_PER_ROW), // cell width
         postHeight = postWidth, // column height
 	isRequestInProgess = false,
         lastCol = 0,
         lastRow = 0,
-	DEFAULT_GROUP_ID = '13601226661',
-	groupID = queryString.getParameterByName(window.location.href, GROUPID_QUERY) || DEFAULT_GROUP_ID,
+	DEFAULT_ID = '13601226661',
+	id = queryString.getParameterByName(window.location.href, ID_QUERY) || DEFAULT_ID,
 	getElementAbsoluteY = function(oElement) {
 		var iReturnValue = 0;
 		while( oElement != null ) {
@@ -46,7 +48,15 @@ window.fbAsyncInit = function () {
 		return iReturnValue;
 	},
         nextUrl, matrices = (function () {
-            var list = []; // holds the list of matrices
+            var list = [], // holds the list of matrices
+	      getTotalHeight = function () {
+		      var i = 0, j = list.length, total = getElementAbsoluteY(box.find("canvas")[0]);
+		      for (; i < j; ++i) {
+			      total += list[i].getHeight();
+		      }
+
+		      return total;
+	      };
             return {
                 push: function (m) {
                     list.push(m);
@@ -63,7 +73,6 @@ window.fbAsyncInit = function () {
                 getElementUnderMouse: function (clickX, clickY) {
                     var m, i = 0,
                         j = list.length,
-                        //totalHeight = 0;
                         totalHeight = getElementAbsoluteY(box.find("canvas")[0]);
                     for (; i < j; ++i) {
                         if (totalHeight + list[i].getHeight() > clickY) {
@@ -79,13 +88,16 @@ window.fbAsyncInit = function () {
                     var matrixRow = Math.ceil(yPosInM / postHeight) - 1;
 
                     return m.cells[(matrixRow * POSTS_PER_ROW) + matrixCell];
-                }
+                },
+		getTotalHeight:getTotalHeight
             };
         }()),
         fetch = function (url) {
-            console.log('Fetching ' , url);
-	    if (isRequestInProgess) {
-		    console.log('A fetch is already in progress.  Wait for it to finish');
+	    if (isRequestInProgess) { // A fetch is already in progress so skip this command
+		    return;
+	    }
+
+	    if (!url) { // We're done; no more links
 		    return;
 	    }
 
@@ -93,13 +105,19 @@ window.fbAsyncInit = function () {
             $.getJSON(url, function (response) {
                 nextUrl = response.paging && response.paging.next;
 		isRequestInProgess = false;
-                handleData(response.data);
+                var numberOfValidLinks = handleData(response.data);
+		if (!numberOfValidLinks) { // none of the links were valid; so, fetch more
+			fetch(nextUrl);
+			return;
+		}
+		var totalHeightYet = matrices.getTotalHeight();
+		if (totalHeightYet < $(window).height()) { // we still haven't filled the first page yet, so continue fetching
+			fetch(nextUrl);
+		}
             });
         },
         start = function (accessToken) {
-            console.log('starting');
-	    var groupInfo = getGroupInfo(groupID, accessToken, function (info) {
-			    //console.log(info);
+	    var groupInfo = getGroupInfo(id, accessToken, function (info) {
 			    $("#grouptitle").html(info.name);
 			    $("#groupdescription").html(info.description);
 			    $("#grouplink").attr('href', 'https://www.facebook.com/groups/' + info.id);
@@ -107,10 +125,10 @@ window.fbAsyncInit = function () {
 
 	    $("#loggedInContent").css('display', 'block');
 
-            fetch('https://graph.facebook.com/' + groupID + '/feed?access_token=' + accessToken);
+            fetch('https://graph.facebook.com/' + id + '/feed?access_token=' + accessToken);
         },
 	getGroupInfo = function (id, accessToken, callback) {
-            callback && $.getJSON('https://graph.facebook.com/' + groupID + '?access_token=' + accessToken, function (response) {
+            callback && $.getJSON('https://graph.facebook.com/' + id + '?access_token=' + accessToken, function (response) {
 			    callback(response);
             });
 	},
@@ -140,7 +158,6 @@ window.fbAsyncInit = function () {
             for (; i < j; ++i) {
                 post = data[i];
                 if (!post.link || !youtubeEmbedBuilder.isYoutubeLink(post.link)) {
-                    //console.log('Skipping link: ', post.link);
                     continue;
                 }
 
@@ -173,6 +190,7 @@ window.fbAsyncInit = function () {
             matrices.push(matrix(POSTS_PER_ROW * postWidth, neededRows * postHeight, validLinks));
             box.append($(lastCtx.canvas));
             drawImages(lastCtx, validLinks, 0, 0);
+	    return validLinks.length;
         },
         drawImages = function (ctx, links, c, r) {
             var i = 0,
@@ -202,7 +220,7 @@ window.fbAsyncInit = function () {
             var container = $("<div/>").attr("class", "post").css({
                 width: postWidth
             }),
-                youtube = youtubeEmbedBuilder.build(link, postWidth, 315);
+                youtube = youtubeEmbedBuilder.build(link, VIDEO_WIDTH, VIDEO_HEIGHT);
             container.append(youtube);
 
             return container;
@@ -245,7 +263,7 @@ window.fbAsyncInit = function () {
             return;
         }
 
-        youtubeEmbedBuilder.build(element.link, postWidth, 315).dialog({
+        youtubeEmbedBuilder.build(element.link, VIDEO_WIDTH, VIDEO_HEIGHT).dialog({
             title: element.name,
             modal: true,
             closeOnEscape: true,
@@ -255,13 +273,13 @@ window.fbAsyncInit = function () {
         });
     });
 
-    groupQuery.watermark(groupID);
+    groupQuery.watermark(id);
     groupQuery.keyup(function (e) {
 	    if (e.keyCode !== 13) {
 	    	return;
 	    }
 
-	    var newLocation = location.protocol + '//' + location.host + location.pathname + '?' + GROUPID_QUERY + '=' + groupQuery.val();
+	    var newLocation = location.protocol + '//' + location.host + location.pathname + '?' + ID_QUERY + '=' + groupQuery.val();
 	    location.href = newLocation;
     });
 
