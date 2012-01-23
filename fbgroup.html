@@ -11,7 +11,7 @@
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
 		<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.min.js"></script>
 		<script src="js/youtubeEmbedBuilder.js"></script>
-		<script src="main.js"></script>
+		<script src="js/main.js"></script>
 		<script>
         (function(d){
            var js, id = 'facebook-jssdk'; if (d.getElementById(id)) {return;}
@@ -21,7 +21,9 @@
          }(document));
 		</script>
 
-		<fb:login-button autologoutlink="true" data-scope="read_stream"> </fb:login-button>
+		<div id="login">
+			<fb:login-button autologoutlink="true" data-scope="read_stream"> </fb:login-button>
+		</div>
 
 		<div id="box">
 

@@ -134,6 +134,7 @@ var matrix = function (width, height, cells) {
 					ctx.drawImage(img, startCol * postWidth, startRow * postHeight, postWidth, postHeight);
 				};
 
+				console.log(link, youtubeEmbedBuilder.getVideoID(link));
 				img.src = 'http://img.youtube.com/vi/' + youtubeEmbedBuilder.getVideoID(link) + '/0.jpg';
 			} (ctx, links[i].link, c, r));
 			c = (c + 1) % POSTS_PER_ROW;
@@ -179,6 +180,6 @@ var matrix = function (width, height, cells) {
 			}
 
 			console.log(element);
-			youtubeEmbedBuilder.build(element.link,postWidth, 315).dialog({title: element.name, modal: true, width: postWidth, height: 315, resizable: false}); 
+			youtubeEmbedBuilder.build(element.link,postWidth, 315).dialog({title: element.name, modal: true, closeOnEscape: true, width: postWidth, height: 315, resizable: false}); 
 	});
 };
