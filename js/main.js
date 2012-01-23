@@ -28,6 +28,7 @@ window.fbAsyncInit = function () {
 	groupQuery = $("#groupquery"),
         lastCtx, // the last canvas context that we drew on
         bodyWidth = $('body').innerWidth(),
+        GROUPID_QUERY = 'groupid',
         POSTS_PER_ROW = 5,
         postWidth = Math.floor(bodyWidth / POSTS_PER_ROW),
         // cell width
@@ -36,7 +37,15 @@ window.fbAsyncInit = function () {
         lastCol = 0,
         lastRow = 0,
 	DEFAULT_GROUP_ID = '13601226661',
-	groupID = queryString.getParameterByName(window.location.href, 'groupid') || DEFAULT_GROUP_ID,
+	groupID = queryString.getParameterByName(window.location.href, GROUPID_QUERY) || DEFAULT_GROUP_ID,
+	getElementAbsoluteY = function(oElement) {
+		var iReturnValue = 0;
+		while( oElement != null ) {
+			iReturnValue += oElement.offsetTop;
+			oElement = oElement.offsetParent;
+		}
+		return iReturnValue;
+	},
         nextUrl, matrices = (function () {
             var list = []; // holds the list of matrices
             return {
@@ -55,7 +64,8 @@ window.fbAsyncInit = function () {
                 getElementUnderMouse: function (clickX, clickY) {
                     var m, i = 0,
                         j = list.length,
-                        totalHeight = 0;
+                        //totalHeight = 0;
+                        totalHeight = getElementAbsoluteY(box.find("canvas")[0]);
                     for (; i < j; ++i) {
                         if (totalHeight + list[i].getHeight() > clickY) {
                             m = list[i];
@@ -220,8 +230,8 @@ window.fbAsyncInit = function () {
             title: element.name,
             modal: true,
             closeOnEscape: true,
-            width: postWidth,
-            height: 315,
+            width: 420,
+            height: 378,
             resizable: false
         });
     });
@@ -232,7 +242,6 @@ window.fbAsyncInit = function () {
 	    	return;
 	    }
 
-	    var l = location.origin + location.pathname + '?groupid=' + groupQuery.val();
-	    location.href = l
+	    location.href = location.origin + location.pathname + '?' + GROUPID_QUERY + '=' + groupQuery.val();
     });
 };

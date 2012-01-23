@@ -16,12 +16,15 @@ var youtubeEmbedBuilder = (function () {
 
     return {
         build: function (link, width, height) {
+	console.log(width, height);
             var embedLink = 'http://www.youtube.com/v/' + getVideoID(link),
-                embed = $('<object type="application/x-shockwave-flash" style="width:' + width + 'px; height:' + height + 'px;" data="' + embedLink + '?version=3"/>');
+		container = $("<div/>"),
+                embed = $('<object type="application/x-shockwave-flash" data="' + embedLink + '?version=3"/>').css({width: width, height: height});
             embed.append($('<param name="movie" value="' + embedLink + '?version=3" />'));
             embed.append($('<param name="allowFullScreen" value="true" />'));
             embed.append($('<param name="allowscriptaccess" value="always" />'));
-            return embed;
+	    container.append(embed);
+            return container;
         },
         isYoutubeLink: function (link) {
             if (isShortLink(link)) {

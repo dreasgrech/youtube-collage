@@ -39,3 +39,9 @@ h1 {
 	font-size:30px;
 	padding-bottom: 20px;
 }
+
+.ui-dialog-title {
+	width: 100%;
+	font-size: 12px;
+	text-align:center;
+}
