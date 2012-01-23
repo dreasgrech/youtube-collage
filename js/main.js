@@ -86,19 +86,20 @@ window.fbAsyncInit = function () {
         fetch = function (url) {
             console.log('Fetching ' , url);
             $.getJSON(url, function (response) {
-                nextUrl = response.paging.next;
+                nextUrl = response.paging && response.paging.next;
                 handleData(response.data);
             });
-
         },
         start = function (accessToken) {
             console.log('starting');
 	    var groupInfo = getGroupInfo(groupID, accessToken, function (info) {
-			    console.log(info);
+			    //console.log(info);
 			    $("#grouptitle").html(info.name);
 			    $("#groupdescription").html(info.description);
 			    $("#grouplink").attr('href', 'https://www.facebook.com/groups/' + info.id);
 	    });
+
+	    $("#loggedInContent").css('display', 'block');
 
             fetch('https://graph.facebook.com/' + groupID + '/feed?access_token=' + accessToken);
         },
@@ -133,19 +134,28 @@ window.fbAsyncInit = function () {
             for (; i < j; ++i) {
                 post = data[i];
                 if (!post.link || !youtubeEmbedBuilder.isYoutubeLink(post.link)) {
-                    console.log('Skipping link: ', post.link);
+                    //console.log('Skipping link: ', post.link);
                     continue;
                 }
 
                 validLinks.push(post);
             }
 
+		if (!validLinks.length) {
+			return;
+		}
+
             if (lastCol !== 0) { // we need to fill some empty spaces from the last page first
-                var left = validLinks.shiftRange(POSTS_PER_ROW - lastCol),
+                var left = validLinks.shiftRange(Math.min(POSTS_PER_ROW - lastCol, validLinks.length)),
                     previousCells = matrices.elementAt(matrices.length() - 1).cells;
                 drawImages(lastCtx, left, lastCol, lastRow - 1, 1);
                 matrices.modifyCells(matrices.length() - 1, previousCells.concat(left));
+		lastCol = (lastCol + left.length) % POSTS_PER_ROW;
             }
+
+	    if (!validLinks.length) {
+		    return;
+	    }
 
             var neededRows = Math.ceil(validLinks.length / POSTS_PER_ROW);
             lastCol = validLinks.length % POSTS_PER_ROW;
@@ -162,6 +172,9 @@ window.fbAsyncInit = function () {
             var i = 0,
                 j = links.length;
             for (; i < j; ++i) {
+		    if (!links[i]) {
+			    continue;
+		    }
                 (function (ctx, link, startCol, startRow) {
                     var img = new Image();
                     img.onload = function () {
@@ -215,7 +228,7 @@ window.fbAsyncInit = function () {
 
     // Load as you scroll
     $(window).scroll(function () {
-        if ($(window).scrollTop() == $(document).height() - $(window).height()) {
+        if (($(window).scrollTop() + 1) >= $(document).height() - $(window).height()) { // the ( + 1) is because in Firefox, the scrollTop was never reaching the window height...always a step less; this addition compensates it.
             fetch(nextUrl);
         }
     });
@@ -242,6 +255,13 @@ window.fbAsyncInit = function () {
 	    	return;
 	    }
 
-	    location.href = location.origin + location.pathname + '?' + GROUPID_QUERY + '=' + groupQuery.val();
+	    var newLocation = location.protocol + '//' + location.host + location.pathname + '?' + GROUPID_QUERY + '=' + groupQuery.val();
+	    location.href = newLocation;
+    });
+
+    $(window).keyup(function (e) {
+	    if (e.keyCode === 32) { // SPACE
+		    fetch(nextUrl);
+	    }
     });
 };
