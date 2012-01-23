@@ -7,16 +7,66 @@ Array.prototype.shiftRange = function (n) {
 	return out;
 };
 
+var matrix = function (width, height, cells) {
+
+	return {
+		getWidth: function () {
+				  return width;
+		},
+		getHeight: function () {
+				  return height;
+		},
+		cells: cells
+	};
+};
+
+
         window.fbAsyncInit = function() {
 	var mainContainer = $("#main"),
 	    box = $("#box"),
 	    lastCtx, // the last canvas context that we drew on
 	    bodyWidth = $('body').innerWidth(),
 	    POSTS_PER_ROW = 5,
-	    postWidth = Math.floor(bodyWidth / POSTS_PER_ROW),
+	    postWidth = Math.floor(bodyWidth / POSTS_PER_ROW), // cell width
+	    postHeight = postWidth, // column height
 	    lastCol = 0,
 	    lastRow = 0,
 	    nextUrl,
+	matrices = (function () {
+			var list = []; // holds the list of matrices
+
+			return {
+				push: function (m) {
+					list.push(m);
+				},
+				elementAt: function (n) {
+					return list[n];
+				},
+				modifyCells: function (n, newCells) {
+					list[n].cells = newCells;
+				},
+				length: function () {
+					return list.length;
+				},
+				getElementUnderMouse: function (clickX, clickY) {
+					var m, i = 0, j = list.length, totalHeight = 0;
+					for (; i < j; ++i) {
+						if (totalHeight + list[i].getHeight() > clickY) {
+							m = list[i];
+							break;
+						}
+
+						totalHeight += list[i].getHeight();
+					}
+
+					var yPosInM = clickY - totalHeight;
+					var matrixCell = Math.ceil(clickX / postWidth) - 1;
+					var matrixRow = Math.ceil(yPosInM / postHeight) - 1;
+
+					return m.cells[(matrixRow * POSTS_PER_ROW) + matrixCell];
+				}
+			};
+	}()),
 	    fetch = function(url) {
 		console.log('URL: ' + url);
 		$.getJSON(url, function (response) {
@@ -57,33 +107,30 @@ Array.prototype.shiftRange = function (n) {
 			validLinks.push(post);
 		}
 
-
-		console.log('Valid links: ', validLinks.length);
 		if (lastCol !== 0) { // we need to fill some empty spaces from the last page first
-			var left = validLinks.shiftRange(POSTS_PER_ROW - lastCol);
-			//drawImages(lastCtx, left, lastCol, lastRow);
+			var left = validLinks.shiftRange(POSTS_PER_ROW - lastCol), previousCells = matrices.elementAt(matrices.length() - 1).cells;
 			drawImages(lastCtx, left, lastCol, lastRow - 1, 1);
+			matrices.modifyCells(matrices.length() - 1, previousCells.concat(left));
 		} 
 
 		var neededRows = Math.ceil(validLinks.length / POSTS_PER_ROW);
 		lastCol = validLinks.length % POSTS_PER_ROW;
 		lastRow = neededRows;
-		// Create a new canvas to draw the newly recieved
-		lastCtx = createCanvas(bodyWidth, neededRows * postWidth).getContext('2d');
 
+		// Create a new canvas to draw the newly recieved
+		lastCtx = createCanvas(bodyWidth, neededRows * postHeight).getContext('2d');
+
+		matrices.push(matrix(POSTS_PER_ROW * postWidth, neededRows * postHeight, validLinks));
 		box.append($(lastCtx.canvas));
 		drawImages(lastCtx, validLinks, 0, 0);
     	},
 	drawImages = function (ctx, links, c, r ) {
 		var i = 0, j = links.length;
-		console.log(ctx.canvas);
-		console.log('links length', j);
 		for (; i < j; ++i) {
 			(function (ctx, link, startCol, startRow) {
 				var img = new Image();
 				img.onload = function () {
-					console.log(startCol * postWidth, startRow * postWidth);
-					ctx.drawImage(img, startCol * postWidth, startRow * postWidth, postWidth, postWidth);
+					ctx.drawImage(img, startCol * postWidth, startRow * postHeight, postWidth, postHeight);
 				};
 
 				img.src = 'http://img.youtube.com/vi/' + youtubeEmbedBuilder.getVideoID(link) + '/0.jpg';
@@ -121,5 +168,11 @@ Array.prototype.shiftRange = function (n) {
 		if ($(window).scrollTop() == $(document).height() - $(window).height()){
 		   fetch(nextUrl);
 		}
+	});
+
+	box.click(function (e) {
+			console.log(e.pageX, e.pageY);
+			var element = matrices.getElementUnderMouse(e.pageX, e.pageY);
+			console.log(element);
 	});
 };
