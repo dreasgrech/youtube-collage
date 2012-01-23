@@ -101,6 +101,7 @@ var matrix = function (width, height, cells) {
 		for (; i < j; ++i) {
 			post = data[i];
 			if (!post.link || !youtubeEmbedBuilder.isYoutubeLink(post.link)) {
+				console.log('Skipping link: ', post.link);
 				continue;
 			}
 
@@ -173,6 +174,11 @@ var matrix = function (width, height, cells) {
 	box.click(function (e) {
 			console.log(e.pageX, e.pageY);
 			var element = matrices.getElementUnderMouse(e.pageX, e.pageY);
+			if (!element) {
+				return;
+			}
+
 			console.log(element);
+			youtubeEmbedBuilder.build(element.link,postWidth, 315).dialog({title: element.name, modal: true, width: postWidth, height: 315, resizable: false}); 
 	});
 };
