@@ -1,6 +1,10 @@
 body {
 	width: 100%;
 	height: 100%;
+	color: #333333;
+	font-family: "Lucida Grande", Tahoma, Verdana, Arial, sans-serif;
+	line-height:18px;
+	text-align:justify;
 }
 
 .canvas {
@@ -19,6 +23,19 @@ body {
 	height: 315px;
 }
 
+#groupinfo {
+	padding: 20px;
+}
+
+#groupquery {
+	text-align:center;
+}
+
 .toclear {
 	clear: both;
+}
+
+h1 {
+	font-size:30px;
+	padding-bottom: 20px;
 }

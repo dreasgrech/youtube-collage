@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html> 
 	<head> 
-		<title>Client Flow Example</title> 
+		<title>GroupTubes</title> 
 		<link rel="stylesheet" type="text/css" href="css/reset.css" />
 		<link rel="stylesheet" type="text/css" href="css/main.css" />
 		<link type="text/css" href="css/ui-darkness/jquery-ui-1.8.17.custom.css" rel="stylesheet" />	
@@ -10,6 +10,8 @@
 		<div id="fb-root"></div>
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
 		<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.min.js"></script>
+		<script src="js/jquery.watermark.min.js"></script>
+		<script src="js/querystring.js"></script>
 		<script src="js/youtubeEmbedBuilder.js"></script>
 		<script src="js/main.js"></script>
 		<script>
@@ -23,6 +25,16 @@
 
 		<div id="login">
 			<fb:login-button autologoutlink="true" data-scope="read_stream"> </fb:login-button>
+		</div>
+
+		<div class="toclear"></div>
+		<div id="groupsearch">
+			Change group: <input type="text" id="groupquery"/>
+		</div>
+
+		<div id="groupinfo">
+			<a id="grouplink" target="_blank"><h1 id="grouptitle"></h1></a>
+			<p id="groupdescription"></p>
 		</div>
 
 		<div id="box">
