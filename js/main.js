@@ -30,10 +30,9 @@ window.fbAsyncInit = function () {
         bodyWidth = $('body').innerWidth(),
         GROUPID_QUERY = 'groupid',
         POSTS_PER_ROW = 5,
-        postWidth = Math.floor(bodyWidth / POSTS_PER_ROW),
-        // cell width
-        postHeight = postWidth,
-        // column height
+        postWidth = Math.floor(bodyWidth / POSTS_PER_ROW), // cell width
+        postHeight = postWidth, // column height
+	isRequestInProgess = false,
         lastCol = 0,
         lastRow = 0,
 	DEFAULT_GROUP_ID = '13601226661',
@@ -85,8 +84,15 @@ window.fbAsyncInit = function () {
         }()),
         fetch = function (url) {
             console.log('Fetching ' , url);
+	    if (isRequestInProgess) {
+		    console.log('A fetch is already in progress.  Wait for it to finish');
+		    return;
+	    }
+
+	    isRequestInProgess = true;
             $.getJSON(url, function (response) {
                 nextUrl = response.paging && response.paging.next;
+		isRequestInProgess = false;
                 handleData(response.data);
             });
         },
