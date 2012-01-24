@@ -7,10 +7,6 @@ body {
 	text-align:justify;
 }
 
-.canvas {
-	cursor: hand;
-}
-
 #main {
 	width: 100%;
 	height: 500px;
@@ -35,13 +31,23 @@ body {
 	clear: both;
 }
 
-h1 {
+#grouptitle {
 	font-size:30px;
 	padding-bottom: 20px;
+}
+
+#groupdescription {
+	margin-top:10px;
 }
 
 .ui-dialog-title {
 	width: 100%;
 	font-size: 12px;
 	text-align:center;
+}
+
+.post-date {
+	clear:both;
+	float: right;
+	font-size:10px;
 }

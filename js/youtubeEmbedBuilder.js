@@ -16,7 +16,6 @@ var youtubeEmbedBuilder = (function () {
 
     return {
         build: function (link, width, height) {
-	console.log(width, height);
             var embedLink = 'http://www.youtube.com/v/' + getVideoID(link),
 		container = $("<div/>"),
                 embed = $('<object type="application/x-shockwave-flash" data="' + embedLink + '?version=3"/>').css({width: width, height: height});
