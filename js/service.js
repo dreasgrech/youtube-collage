@@ -8,14 +8,15 @@ var service = function (matrices, postsPerRow, box, bodyWidth, postWidth, postHe
                 for (; i < j; ++i) {
                     if (!links[i]) {
                         continue;
-                    }(function (ctx, link, startCol, startRow) {
+                    }
+		    (function (ctx, link, startCol, startRow) {
                         var img = new Image();
                         img.onload = function () {
                             ctx.drawImage(img, startCol * postWidth, startRow * postHeight, postWidth, postHeight);
                         };
 
                         img.src = 'http://img.youtube.com/vi/' + youtubeEmbedBuilder.getVideoID(link) + '/0.jpg';
-                    }(ctx, links[i].link, column, row));
+                    }(ctx, links[i].url, column, row));
                     column = (column + 1) % postsPerRow;
                     if (!column) {
                         row++;
@@ -57,7 +58,7 @@ var service = function (matrices, postsPerRow, box, bodyWidth, postWidth, postHe
             fetch = function (url) {
                 url = url || nextUrl;
                 requestHandler.fetch(url, function (response) {
-                    var validLinks = obj.getValidLinks(response.data);
+                    var validLinks = obj.getValidLinks(response);
                     nextUrl = obj.getNextUrl(response);
                     if (!validLinks.length) { // none of the links were valid; so, fetch more
                         fetch();
@@ -72,15 +73,27 @@ var service = function (matrices, postsPerRow, box, bodyWidth, postWidth, postHe
                     }
                 });
             },
+        buildTitle = function (name) {
+            return "GroupTubes - " + name;
+        },
             obj = {
                 getValidLinks: function (links) {
-		    // This function can be overridden
-                    return links;
+                    throw "No override";
                 },
                 getNextUrl: function (data) {
                     throw "No override";
                 },
-                fetch: fetch
+                startFetching: function (url) {
+	       	    throw "No override";
+                },
+                fetch: fetch,
+		    renderInfo : function (info) {
+				info.icon && $("#favicon").attr('href', info.icon);
+				$("title").html(buildTitle(info.name));
+				$("#grouptitle").html(info.name);
+				$("#groupdescription").html(info.description);
+				$("#grouplink").attr('href', info.link);
+		    },
             };
 
         return obj;

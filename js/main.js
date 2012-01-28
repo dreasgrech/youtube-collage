@@ -17,6 +17,7 @@ window.fbAsyncInit = function () {
         POSTS_PER_ROW_DEFAULT = 10,
         VIDEO_WIDTH = 385,
         VIDEO_HEIGHT = 315,
+	currentService,
 	mainContainer = $("#main"),
         box = $("#box"),
         query = $("#query"),
@@ -26,32 +27,79 @@ window.fbAsyncInit = function () {
         postWidth = Math.floor(bodyWidth / postsPerRow), // cell width
         postHeight = postWidth, // cell height
         id = queryString.getParameterByName(window.location.href, ID_QUERY) || DEFAULT_ID,
-        buildTitle = function (name) {
-            return "GroupTubes - " + name;
-        },
 	matrices = matrixCollection(box, postWidth, postHeight, postsPerRow),
 	youtube = (function () {
-		var base = service(matrices, postsPerRow, box, bodyWidth, postWidth, postHeight);
+		var base = service(matrices, postsPerRow, box, bodyWidth, postWidth, postHeight), 
+		getVideoLink = function (links) {
+			var i = 0, j = links.length;
+			for (; i < j; ++i) {
+				if (links[i].rel === "alternate") {
+					return links[i].href;
+				}
+			}
+
+			throw "No video link?";
+		};
+
+		base.startFetching = function (id) {
+			return base.fetch('https://gdata.youtube.com/feeds/api/users/' + id + '/uploads?callback=?&alt=json');
+		};
+		base.getNextUrl = function (response) {
+			var links = response.feed.link, i = 0, j = links.length;
+			for (; i < j; ++i) {
+				if (links[i].rel === "next") {
+					return links[i].href;
+				}
+			}
+
+		};
+
+		base.formatTime = function (time) {
+		    return time.substring(0, time.indexOf('T'));
+		};
+
+		base.getObjectInfo = function (id) {
+		    $.getJSON('https://gdata.youtube.com/feeds/api/users/' + id + '?alt=json&callback=?', function (response) {
+				    var entry = response.entry, username = entry.yt$username.$t;
+
+				    base.renderInfo(elementInfo(entry.media$thumbnail.url, username, entry.yt$description.$t, 'http://www.youtube.com/user/' + username));
+		    });
+		};
+
+		base.getValidLinks = function (response) {
+			var entries = response.feed.entry, i = 0, j = entries.length, validLinks = [], post;
+			for(; i < j; ++i) {
+				post = entries[i];
+				var l = link(post.published.$t, post.title.$t, getVideoLink(post.link), post.author[0].name.$t, post.author[0].name.$t);
+				validLinks.push(l);
+			}
+
+			return validLinks;
+		};
 
 		return base;
 	}()),
 	facebook = (function () {
 		var base = service(matrices, postsPerRow, box, bodyWidth, postWidth, postHeight), token;
 
+		base.startFetching = function (id) {
+			return base.fetch('https://graph.facebook.com/' + id + '/feed?access_token=' + token + '&callback=?');
+		};
+
 		base.formatTime = function (time) {
 		    return time.substring(0, time.indexOf('T'));
 		};
 
-		base.getValidLinks = function (data) {
-		    var i = 0, j = data.length, validLinks = [], post;
+		base.getValidLinks = function (response) {
+		    var links = response.data, i = 0, j = links.length, validLinks = [], post;
 
 		    for (; i < j; ++i) {
-			post = data[i];
+			post = links[i];
 			if (!post.link || !youtubeEmbedBuilder.isYoutubeLink(post.link)) {
 			    continue;
 			}
 
-			validLinks.push(post);
+			validLinks.push(link(post.created_time, post.name, post.link, post.from.id, post.from.name));
 		    }
 
 		    return validLinks;
@@ -80,9 +128,9 @@ window.fbAsyncInit = function () {
 			return token;
 		};
 
-		base.getObjectInfo = function (id, callback) {
-		    callback && $.getJSON('https://graph.facebook.com/' + id + '?access_token=' + token + '&callback=?', function (response) {
-			callback(response);
+		base.getObjectInfo = function (id) {
+		    $.getJSON('https://graph.facebook.com/' + id + '?access_token=' + token + '&callback=?', function (response) {
+		        base.renderInfo(elementInfo(response.icon, response.name, response.description, 'https://www.facebook.com/' + response.id));
 		    });
 		};
 
@@ -91,17 +139,11 @@ window.fbAsyncInit = function () {
         start = function (accessToken) {
             $("#login").dialog("destroy").css({ display: 'block', height: '', 'min-height': '', width: '' }) // remove the css that the dialog leaves
             .prependTo($('body'));
-            var groupInfo = facebook.getObjectInfo(id, function (info) {
-                info.icon && $("#favicon").attr('href', info.icon);
-                $("title").html(buildTitle(info.name));
-                $("#grouptitle").html(info.name);
-                $("#groupdescription").html(info.description);
-                $("#grouplink").attr('href', 'https://www.facebook.com/' + info.id);
-            });
+            var groupInfo = currentService.getObjectInfo(id);
 
             $("#loggedInContent").css('display', 'block');
 
-            facebook.fetch('https://graph.facebook.com/' + id + '/feed?access_token=' + accessToken + '&callback=?');
+            currentService.startFetching(id);
         };
 
     FB.init({
@@ -143,13 +185,13 @@ window.fbAsyncInit = function () {
     // Load as you scroll
     $(window).scroll(function () {
         if (($(window).scrollTop() + 1) >= $(document).height() - $(window).height()) { // the ( + 1) is because in Firefox, the scrollTop was never reaching the window height...always a step less; this addition compensates it.
-            facebook.fetch();
+            currentService.fetch();
         }
     });
 
     $(window).keyup(function (e) {
         if (e.keyCode === 32) { // SPACE
-            facebook.fetch();
+            currentService.fetch();
         }
     });
 
@@ -160,10 +202,10 @@ window.fbAsyncInit = function () {
             return;
         }
 
-        postedDate = $("<p/>").addClass('post-date').html(facebook.formatTime(element.created_time));
-        youtubeElement = youtubeEmbedBuilder.build(element.link, VIDEO_WIDTH, VIDEO_HEIGHT);
+        postedDate = $("<p/>").addClass('post-date').html(currentService.formatTime(element.created));
+        youtubeElement = youtubeEmbedBuilder.build(element.url, VIDEO_WIDTH, VIDEO_HEIGHT);
         modalContents.append(youtubeElement);
-        modalContents.append($("<p/>").css({ 'padding-top': 5, float: 'right' }).html('Posted by <a href="http://www.facebook.com/' + element.from.id + '" target="_blank">' + element.from.name + '</a>'));
+        modalContents.append($("<p/>").css({ 'padding-top': 5, float: 'right' }).html('Posted by <a href="http://www.facebook.com/' + element.poster.id + '" target="_blank">' + element.poster.name + '</a>'));
         modalContents.append(postedDate);
 
         modalContents.dialog({
@@ -197,13 +239,6 @@ window.fbAsyncInit = function () {
         $this.css({cursor: 'pointer'});
     });
 
-    /*$.ajax({
-	url: 'https://gdata.youtube.com/feeds/api/users/darublues/uploads?callback=?&alt=json',
-	dataType: 'jsonp',
-	success: function (response) {
-		console.log(response);
-	}
-    });*/
-
-    //youtube.fetch('https://gdata.youtube.com/feeds/api/users/darublues/uploads?callback=?&alt=json');
+    //currentService = youtube;
+    currentService = facebook;
 };
