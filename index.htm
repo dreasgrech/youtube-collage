@@ -40,6 +40,18 @@
 		<div id="loggedInContent" style="display:none">
 			<div id="search">
 				ID: <input type="text" id="query"/>
+				<select id="serviceSelect">
+					<option value="youtube">Youtube</option>
+					<option value="facebook">Facebook</option>
+				</select>
+			</div>
+			<div id="currentInfo">
+				<table>
+					<tr><td>ID</td><td id="infoID"></td></tr>
+					<tr><td>Service</td><td id="infoService"></td></tr>
+					<tr><td>Videos per row</td><td id="infoPerRow"></td></tr>
+				</table>
+
 			</div>
 			<hr/>
 			<div id="info">
