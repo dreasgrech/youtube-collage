@@ -1,3 +1,4 @@
+
 Array.prototype.shiftRange = function (n) {
     var out = [],
         i = 0;
@@ -8,134 +9,89 @@ Array.prototype.shiftRange = function (n) {
     return out;
 };
 
-var matrix = function (width, height, cells) {
-        return {
-            getWidth: function () {
-                return width;
-            },
-            getHeight: function () {
-                return height;
-            },
-            cells: cells
-        };
-    };
-
-
 window.fbAsyncInit = function () {
-    var mainContainer = $("#main"),
-        box = $("#box"),
-        groupQuery = $("#groupquery"),
-        lastCtx, // the last canvas context that we drew on
-        bodyWidth = $('body').innerWidth(),
+    var APP_ID = '367186123307673',
         ID_QUERY = 'id',
         DEFAULT_ID = '13601226661',
         POSTS_PER_ROW_QUERY = 'perrow',
         POSTS_PER_ROW_DEFAULT = 10,
-        postsPerRow = queryString.getParameterByName(window.location.href, POSTS_PER_ROW_QUERY) || POSTS_PER_ROW_DEFAULT,
         VIDEO_WIDTH = 385,
         VIDEO_HEIGHT = 315,
+	mainContainer = $("#main"),
+        box = $("#box"),
+        query = $("#query"),
+        lastCtx, // the last canvas context that we drew on
+        bodyWidth = $('body').innerWidth(),
+        postsPerRow = queryString.getParameterByName(window.location.href, POSTS_PER_ROW_QUERY) || POSTS_PER_ROW_DEFAULT,
         postWidth = Math.floor(bodyWidth / postsPerRow), // cell width
-        postHeight = postWidth, // column height
-        isRequestInProgess = false,
-        lastCol = 0,
-        lastRow = 0,
+        postHeight = postWidth, // cell height
         id = queryString.getParameterByName(window.location.href, ID_QUERY) || DEFAULT_ID,
-        getElementAbsoluteY = function (el) {
-            var y = 0;
-            while (el != null) {
-                y += el.offsetTop;
-                el = el.offsetParent;
-            }
-
-            return y;
-        },
         buildTitle = function (name) {
             return "GroupTubes - " + name;
         },
-        nextUrl, matrices = (function () {
-            var list = [], // holds the list of matrices
-                getTotalHeight = function () {
-                    var i = 0,
-                        j = list.length,
-                        total = getElementAbsoluteY(box.find("canvas")[0]);
-                    for (; i < j; ++i) {
-                        total += list[i].getHeight();
-                    }
+	matrices = matrixCollection(box, postWidth, postHeight, postsPerRow),
+	youtube = (function () {
+		var base = service(matrices, postsPerRow, box, bodyWidth, postWidth, postHeight);
 
-                    return total;
-                };
-            return {
-                push: function (m) {
-                    list.push(m);
-                },
-                elementAt: function (n) {
-                    return list[n];
-                },
-                modifyCells: function (n, newCells) {
-                    list[n].cells = newCells;
-                },
-                length: function () {
-                    return list.length;
-                },
-                getElementUnderMouse: function (clickX, clickY) {
-                    var m, i = 0,
-                        j = list.length,
-                        totalHeight = getElementAbsoluteY(box.find("canvas")[0]);
-                    for (; i < j; ++i) {
-                        if (totalHeight + list[i].getHeight() > clickY) {
-                            m = list[i];
-                            break;
-                        }
+		return base;
+	}()),
+	facebook = (function () {
+		var base = service(matrices, postsPerRow, box, bodyWidth, postWidth, postHeight), token;
 
-                        totalHeight += list[i].getHeight();
-                    }
-                    if (!m) {
-                        return;
-                    }
+		base.formatTime = function (time) {
+		    return time.substring(0, time.indexOf('T'));
+		};
 
-                    var yPosInM = clickY - totalHeight;
-                    var matrixCell = Math.ceil(clickX / postWidth) - 1;
-                    var matrixRow = Math.ceil(yPosInM / postHeight) - 1;
+		base.getValidLinks = function (data) {
+		    var i = 0, j = data.length, validLinks = [], post;
 
-                    return m.cells[(matrixRow * postsPerRow) + matrixCell];
-                },
-                getTotalHeight: getTotalHeight
-            };
-        }()),
-        fetch = function (url) {
-            if (isRequestInProgess) { // A fetch is already in progress so skip this command
-                return;
-            }
+		    for (; i < j; ++i) {
+			post = data[i];
+			if (!post.link || !youtubeEmbedBuilder.isYoutubeLink(post.link)) {
+			    continue;
+			}
 
-            if (!url) { // We're done; no more links
-                return;
-            }
+			validLinks.push(post);
+		    }
 
-            isRequestInProgess = true;
+		    return validLinks;
+	        };
 
-            $.ajax({
-                url: url,
-                dataType: 'jsonp',
-                success: function (response) {
-                    nextUrl = response.paging && response.paging.next;
-                    isRequestInProgess = false;
-                    var numberOfValidLinks = handleData(response.data);
-                    if (!numberOfValidLinks) { // none of the links were valid; so, fetch more
-                        fetch(nextUrl);
-                        return;
-                    }
+		base.getNextUrl = function (response) {
+				return response.paging && response.paging.next;
+		};
 
-                    var totalHeightYet = matrices.getTotalHeight();
-                    if (totalHeightYet < $(window).height()) { // we still haven't filled the first page yet, so continue fetching
-                        fetch(nextUrl);
-                    }
-                }
-            });
-        },
+		base.isLoggedIn = function (callback) {
+			    FB.getLoginStatus(function (response) {
+				if (response.status === 'connected') { // the user is both logged in to FB and has authorized this app
+				    token = response.authResponse.accessToken;
+				    callback(token);
+				} else { // the user is either not logged in to FB or is logged in but hasn't yet authorized this app
+				    callback();
+				}
+			    });
+		};
+
+		base.accessToken = function (at) {
+			if (at) {
+				token = at;
+			}
+
+			return token;
+		};
+
+		base.getObjectInfo = function (id, callback) {
+		    callback && $.getJSON('https://graph.facebook.com/' + id + '?access_token=' + token + '&callback=?', function (response) {
+			callback(response);
+		    });
+		};
+
+		return base;
+	}()),
         start = function (accessToken) {
             $("#login").dialog("destroy").css({ display: 'block', height: '', 'min-height': '', width: '' }) // remove the css that the dialog leaves
             .prependTo($('body'));
-            var groupInfo = getGroupInfo(id, accessToken, function (info) {
+            var groupInfo = facebook.getObjectInfo(id, function (info) {
                 info.icon && $("#favicon").attr('href', info.icon);
                 $("title").html(buildTitle(info.name));
                 $("#grouptitle").html(info.name);
@@ -145,97 +101,11 @@ window.fbAsyncInit = function () {
 
             $("#loggedInContent").css('display', 'block');
 
-            fetch('https://graph.facebook.com/' + id + '/feed?access_token=' + accessToken + '&callback=?');
-        },
-        getGroupInfo = function (id, accessToken, callback) {
-            callback && $.getJSON('https://graph.facebook.com/' + id + '?access_token=' + accessToken + '&callback=?', function (response) {
-                callback(response);
-            });
-        },
-        isLoggedIn = function (callback) {
-            FB.getLoginStatus(function (response) {
-                if (response.status === 'connected') {
-                    callback(response.authResponse.accessToken);
-                } else {
-                    callback();
-                }
-            });
-        },
-        formatFacebookTime = function (fbtime) {
-            return fbtime.substring(0, fbtime.indexOf('T'));
-        },
-        createCanvas = function (width, height) {
-            var canvas = document.createElement('canvas');
-            canvas.className += "canvas";
-            canvas.width = width;
-            canvas.height = height;
-
-            return canvas;
-        },
-        handleData = function (data) {
-            var i = 0, j = data.length, validLinks = [], post, container;
-
-            for (; i < j; ++i) {
-                post = data[i];
-                if (!post.link || !youtubeEmbedBuilder.isYoutubeLink(post.link)) {
-                    continue;
-                }
-
-                validLinks.push(post);
-            }
-
-            if (!validLinks.length) {
-                return;
-            }
-
-            if (lastCol !== 0) { // we need to fill some empty spaces from the last page first
-                var left = validLinks.shiftRange(Math.min(postsPerRow - lastCol, validLinks.length)),
-                    previousCells = matrices.elementAt(matrices.length() - 1).cells;
-
-                drawImages(lastCtx, left, lastCol, lastRow - 1, 1);
-                matrices.modifyCells(matrices.length() - 1, previousCells.concat(left));
-                lastCol = (lastCol + left.length) % postsPerRow;
-            }
-
-            if (!validLinks.length) {
-                return;
-            }
-
-            var neededRows = Math.ceil(validLinks.length / postsPerRow);
-            lastCol = validLinks.length % postsPerRow;
-            lastRow = neededRows;
-
-            // Create a new canvas to draw the newly recieved
-            lastCtx = createCanvas(bodyWidth, neededRows * postHeight).getContext('2d');
-
-            matrices.push(matrix(postsPerRow * postWidth, neededRows * postHeight, validLinks));
-            box.append($(lastCtx.canvas));
-            drawImages(lastCtx, validLinks, 0, 0);
-            return validLinks.length;
-        },
-        drawImages = function (ctx, links, c, r) {
-            var i = 0, j = links.length;
-            for (; i < j; ++i) {
-                if (!links[i]) {
-                    continue;
-                }
-		(function (ctx, link, startCol, startRow) {
-                    var img = new Image();
-                    img.onload = function () {
-                        ctx.drawImage(img, startCol * postWidth, startRow * postHeight, postWidth, postHeight);
-                    };
-
-                    img.src = 'http://img.youtube.com/vi/' + youtubeEmbedBuilder.getVideoID(link) + '/0.jpg';
-                }(ctx, links[i].link, c, r));
-                c = (c + 1) % postsPerRow;
-                if (!c) {
-                    r++;
-                }
-            }
+            facebook.fetch('https://graph.facebook.com/' + id + '/feed?access_token=' + accessToken + '&callback=?');
         };
 
     FB.init({
-        appId: '367186123307673',
+        appId: APP_ID,
         status: true,
         cookie: true,
         xfbml: true,
@@ -252,7 +122,7 @@ window.fbAsyncInit = function () {
         }
     });
 
-    isLoggedIn(function (accessToken) {
+    facebook.isLoggedIn(function (accessToken) {
         if (accessToken) {
             start(accessToken);
         } else {
@@ -273,31 +143,27 @@ window.fbAsyncInit = function () {
     // Load as you scroll
     $(window).scroll(function () {
         if (($(window).scrollTop() + 1) >= $(document).height() - $(window).height()) { // the ( + 1) is because in Firefox, the scrollTop was never reaching the window height...always a step less; this addition compensates it.
-            fetch(nextUrl);
+            facebook.fetch();
         }
     });
 
     $(window).keyup(function (e) {
         if (e.keyCode === 32) { // SPACE
-            fetch(nextUrl);
+            facebook.fetch();
         }
     });
 
     box.click(function (e) {
-        var element = matrices.getElementUnderMouse(e.pageX, e.pageY),
-            modalContents = $("<div/>"),
-            youtubeElement, postedDate;
+        var element = matrices.getElementUnderMouse(e.pageX, e.pageY), modalContents = $("<div/>"), youtubeElement, postedDate;
+
         if (!element) {
             return;
         }
 
-        postedDate = $("<p/>").addClass('post-date').html(formatFacebookTime(element.created_time));
+        postedDate = $("<p/>").addClass('post-date').html(facebook.formatTime(element.created_time));
         youtubeElement = youtubeEmbedBuilder.build(element.link, VIDEO_WIDTH, VIDEO_HEIGHT);
         modalContents.append(youtubeElement);
-        modalContents.append($("<p/>").css({
-            'padding-top': 5,
-            float: 'right'
-        }).html('Posted by <a href="http://www.facebook.com/' + element.from.id + '" target="_blank">' + element.from.name + '</a>'));
+        modalContents.append($("<p/>").css({ 'padding-top': 5, float: 'right' }).html('Posted by <a href="http://www.facebook.com/' + element.from.id + '" target="_blank">' + element.from.name + '</a>'));
         modalContents.append(postedDate);
 
         modalContents.dialog({
@@ -310,29 +176,34 @@ window.fbAsyncInit = function () {
         });
     });
 
-    groupQuery.watermark(id);
-    groupQuery.keyup(function (e) {
+    query.watermark(id);
+    query.keyup(function (e) {
         if (e.keyCode !== 13) {
             return;
         }
 
-        var newLocation = location.protocol + '//' + location.host + location.pathname + '?' + ID_QUERY + '=' + groupQuery.val();
+        var newLocation = location.protocol + '//' + location.host + location.pathname + '?' + ID_QUERY + '=' + query.val();
         location.href = newLocation;
     });
 
     $("canvas").live("mousemove", function (e) {
-        var element = matrices.getElementUnderMouse(e.pageX, e.pageY),
-            $this = $(this);
+        var element = matrices.getElementUnderMouse(e.pageX, e.pageY), $this = $(this);
+
         if (!element) {
-            $this.css({
-                cursor: ''
-            });
+            $this.css({cursor: ''});
             return;
         }
 
-        $this.css({
-            cursor: 'pointer'
-        });
+        $this.css({cursor: 'pointer'});
     });
 
+    /*$.ajax({
+	url: 'https://gdata.youtube.com/feeds/api/users/darublues/uploads?callback=?&alt=json',
+	dataType: 'jsonp',
+	success: function (response) {
+		console.log(response);
+	}
+    });*/
+
+    //youtube.fetch('https://gdata.youtube.com/feeds/api/users/darublues/uploads?callback=?&alt=json');
 };

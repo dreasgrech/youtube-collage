@@ -10,9 +10,14 @@
 		<div id="fb-root"></div>
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
 		<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.min.js"></script>
-		<script src="js/xdr.js"></script>
-		<script src="js/jquery.watermark.min.js"></script>
+		<script src="js/external/xdr.js"></script>
+		<script src="js/external/jquery.watermark.min.js"></script>
+		<script src="js/helpers.js"></script>
 		<script src="js/querystring.js"></script>
+		<script src="js/requestHandler.js"></script>
+		<script src="js/matrix.js"></script>
+		<script src="js/matrices.js"></script>
+		<script src="js/service.js"></script>
 		<script src="js/youtubeEmbedBuilder.js"></script>
 		<script src="js/main.js"></script>
 		<script>
@@ -31,11 +36,11 @@
 		<div class="toclear"></div>
 
 		<div id="loggedInContent" style="display:none">
-			<div id="groupsearch">
-				ID: <input type="text" id="groupquery"/>
+			<div id="search">
+				ID: <input type="text" id="query"/>
 			</div>
 			<hr/>
-			<div id="groupinfo">
+			<div id="info">
 				<a id="grouplink" target="_blank"><span id="grouptitle"></span></a>
 				<p id="groupdescription"></p>
 			</div>
