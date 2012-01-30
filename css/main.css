@@ -7,6 +7,21 @@ body {
 	text-align:justify;
 }
 
+#title {
+	font-size:50px;
+	margin: 20px;
+	text-align: center;
+}
+
+#header p {
+	margin-bottom: 10px;
+}
+
+#header input {
+	margin-bottom: 10px;
+	text-align:center;
+}
+
 #main {
 	width: 100%;
 	height: 500px;
@@ -14,6 +29,10 @@ body {
 #login {
 	float: right;
 } 
+
+#loggedInContent {
+	margin-top:20px;
+}
 .post {
 	float: left;
 	height: 315px;
@@ -21,10 +40,6 @@ body {
 
 #info {
 	padding: 20px;
-}
-
-#query {
-	text-align:center;
 }
 
 .toclear {
@@ -51,6 +66,37 @@ body {
 	float: right;
 	font-size:10px;
 }
+
 #currentInfo {
 	margin-top:10px;
+}
+
+#submitSearch {
+	font-size:13px;
+	padding: 2px 15px;
+}
+
+#loader {
+	display:none;
+	position: fixed;
+	top: 0px;
+	right: 0px;
+	-moz-border-bottom-left-radius: 15px;
+	border-bottom-left-radius: 15px;
+	opacity: 0.8;
+}
+
+#header {
+	padding: 20px;
+}
+
+#videosPerRow {
+	width: 100px;
+}
+
+#fetchAll {
+	margin-top: 0px;
+	padding-top: 0px;
+	padding-bottom: 0px;
+
 }

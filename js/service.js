@@ -1,15 +1,14 @@
-var service = function (matrices, postsPerRow, box, bodyWidth, postWidth, postHeight) {
-        var nextUrl,
-	    lastCol = 0,
+var service = function (matrices, postsPerRow, box, bodyWidth, postWidth, postHeight, loader, fetchAll) {
+        var nextUrl, lastCol = 0,
             lastRow = 0,
             lastCtx, drawImages = function (ctx, links, column, row) {
-                var i = 0, j = links.length;
+                var i = 0,
+                    j = links.length;
 
                 for (; i < j; ++i) {
                     if (!links[i]) {
                         continue;
-                    }
-		    (function (ctx, link, startCol, startRow) {
+                    }(function (ctx, link, startCol, startRow) {
                         var img = new Image();
                         img.onload = function () {
                             ctx.drawImage(img, startCol * postWidth, startRow * postHeight, postWidth, postHeight);
@@ -56,26 +55,38 @@ var service = function (matrices, postsPerRow, box, bodyWidth, postWidth, postHe
                 return validLinks.length;
             },
             fetch = function (url) {
-                url = url || nextUrl;
+                if (!(url = url || nextUrl)) {
+                    // there is no next url, so don't fetch anything
+                    return;
+                }
+
+                loader.show();
                 requestHandler.fetch(url, function (response) {
                     var validLinks = obj.getValidLinks(response);
                     nextUrl = obj.getNextUrl(response);
-                    if (!validLinks.length) { // none of the links were valid; so, fetch more
-                        fetch();
-                        return;
-                    }
 
                     handleData(validLinks);
 
+                    if (!nextUrl) {
+                        loader.hide();
+                        return;
+                    }
+
                     var totalHeightYet = matrices.getTotalHeight();
                     if (totalHeightYet < $(window).height()) { // we still haven't filled the first page yet, so continue fetching
+                        return fetch();
+                    }
+
+                    if (fetchAll) {
                         fetch();
+                    } else {
+                        loader.hide();
                     }
                 });
             },
-        buildTitle = function (name) {
-            return "GroupTubes - " + name;
-        },
+            buildTitle = function (name) {
+                return "YouTube Collage - " + name;
+            },
             obj = {
                 getValidLinks: function (links) {
                     throw "No override";
@@ -84,17 +95,21 @@ var service = function (matrices, postsPerRow, box, bodyWidth, postWidth, postHe
                     throw "No override";
                 },
                 startFetching: function (url) {
-	       	    throw "No override";
+                    throw "No override";
                 },
+		triggerFetchAll: function () {
+			 fetchAll = true;
+			 fetch();
+		},
                 fetch: fetch,
-		    renderInfo : function (info) {
-				info.icon && $("#favicon").attr('href', info.icon);
-				$("title").html(buildTitle(info.name));
-				$("#grouptitle").html(info.name);
-				$("#groupdescription").html(info.description);
-				$("#grouplink").attr('href', info.link);
-		    },
+                renderInfo: function (info) {
+                    info.icon && $("#favicon").attr('href', info.icon);
+                    $("title").html(buildTitle(info.name));
+                    $("#grouptitle").html(info.name);
+                    $("#groupdescription").html(info.description);
+                    $("#grouplink").attr('href', info.link);
+                },
             };
 
         return obj;
-};
+    };

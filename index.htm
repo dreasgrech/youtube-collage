@@ -1,11 +1,17 @@
 <!DOCTYPE html>
 <html> 
 	<head> 
-		<title>GroupTubes</title> 
+		<title>YouTube Collage</title> 
 		<link rel="stylesheet" type="text/css" href="css/reset.css" />
 		<link rel="stylesheet" type="text/css" href="css/main.css" />
 		<link type="text/css" href="css/ui-darkness/jquery-ui-1.8.17.custom.css" rel="stylesheet" />	
 		<link rel="icon" type="image/png" id="favicon"> </head> 
+		<meta property="og:title" content="YouTube Collage" />
+		<meta property="og:type" content="website" />
+		<meta property="og:url" content="http://www.dreasgrech.com/upload/youtubecollage/" />
+		<meta property="og:image" content="http://www.dreasgrech.com/upload/youtubecollage/img/opengraph-image.png" />
+		<meta property="og:site_name" content="YouTube Collage" />
+		<meta property="fb:admins" content="1625044744" />
 	<body> 
 		<div id="fb-root"></div>
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
@@ -31,19 +37,30 @@
          }(document));
 		</script>
 
-		<div id="login">
-			<fb:login-button autologoutlink="true" data-scope="read_stream"> </fb:login-button>
-		</div>
+		<div id="header">
+			<div id="login">
+				<fb:login-button autologoutlink="true" data-scope="read_stream,offline_access"> </fb:login-button>
+			</div>
+			<div id="title">YouTube Collage</div>
+			<div>
+				<p>This application creates a collage of YouTube videos.</p>
 
-		<div class="toclear"></div>
+				<p>Currently, two services from where videos can be fetched are supported: Facebook and Youtube.</p>
 
-		<div id="loggedInContent" style="display:none">
+				<p>For Youtube, you need to use the username of the uploader and it will fetch the videos that were uploaded by that person, and for Facebook you need to use an entity's (Person, Group or Page) ID (which you can get from the URL) and it will fetch the videos that are posted on that entity's wall.</p>
+
+				<p>Written by <a href="http://dreasgrech.com" target="_blank">Andreas Grech</a></p>
+			</div>
 			<div id="search">
-				ID: <input type="text" id="query"/>
-				<select id="serviceSelect">
-					<option value="youtube">Youtube</option>
-					<option value="facebook">Facebook</option>
-				</select>
+				<form method="get">
+					<input type="text" id="query" name="id"/>
+					<select id="serviceSelect" name="service">
+						<option value="youtube">YouTube</option>
+						<option value="facebook">Facebook</option>
+					</select>
+					<input type="text" id="videosPerRow" name="perrow"/>
+					<input type="submit" value="Go" id="submitSearch"/>
+				</form>
 			</div>
 			<div id="currentInfo">
 				<table>
@@ -53,9 +70,14 @@
 				</table>
 
 			</div>
-			<hr/>
+<div class="fb-like" data-href="http://www.dreasgrech.com/upload/fbgrouptubes/" data-send="true" data-width="450" data-show-faces="true"></div>
+			<div class="toclear"></div>
+		</div>
+		<hr/>
+		<div id="loggedInContent" style="display:none">
 			<div id="info">
 				<a id="grouplink" target="_blank"><span id="grouptitle"></span></a>
+				<input type="button" value="Fetch all" id="fetchAll" alt="Fetch all videos"/>
 				<p id="groupdescription"></p>
 			</div>
 
@@ -63,6 +85,23 @@
 
 			</div>
 		</div>
+
+		<div id="loader" class="ui-widget-content">
+			<img src="img/ajax-loader.gif" />
+		</div>
+
+		<script>
+		  var _gaq = _gaq || [];
+		  _gaq.push(['_setAccount', 'UA-11446482-8']);
+		  _gaq.push(['_trackPageview']);
+
+		  (function() {
+		    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+		    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+		    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+		  })();
+
+		</script>
 	</body> 
 </html>
 

@@ -1,12 +1,20 @@
-
 Array.prototype.shiftRange = function (n) {
-    var out = [],
-        i = 0;
+    var out = [], i = 0;
+
     for (; i < n; ++i) {
         out.push(this.shift());
     }
 
     return out;
+};
+
+Array.prototype.forEach = function (callback) {
+	var i = 0, j = this.length, stop;
+	for (; i < j; ++i) {
+		if (stop = callback(this[i], i)) {
+		       return stop;
+		}
+	}
 };
 
 window.fbAsyncInit = function () {
@@ -15,32 +23,44 @@ window.fbAsyncInit = function () {
         ID_QUERY = 'id',
         POSTS_PER_ROW_QUERY = 'perrow',
         SERVICE_QUERY = 'service',
+        FETCH_ALL_QUERY = 'all',
         POSTS_PER_ROW_DEFAULT = 10,
         SERVICE_DEFAULT = "facebook",
+        FETCH_ALL_DEFAULT = false,
         VIDEO_WIDTH = 385,
         VIDEO_HEIGHT = 315,
 	currentService,
 	mainContainer = $("#main"),
         box = $("#box"),
-        query = $("#query"),
         serviceSelect = $("#serviceSelect"),
         lastCtx, // the last canvas context that we drew on
         bodyWidth = $('body').innerWidth(),
+        fetchAll = queryString.getParameterByName(window.location.href, FETCH_ALL_QUERY) || FETCH_ALL_DEFAULT,
         postsPerRow = queryString.getParameterByName(window.location.href, POSTS_PER_ROW_QUERY) || POSTS_PER_ROW_DEFAULT,
         postWidth = Math.floor(bodyWidth / postsPerRow), // cell width
         postHeight = postWidth, // cell height
         id = queryString.getParameterByName(window.location.href, ID_QUERY) || DEFAULT_ID,
 	serviceName = queryString.getParameterByName(window.location.href, SERVICE_QUERY) || SERVICE_DEFAULT,
 	matrices = matrixCollection(box, postWidth, postHeight, postsPerRow),
-	youtube = (function () {
-		var base = service(matrices, postsPerRow, box, bodyWidth, postWidth, postHeight), 
-		getVideoLink = function (links) {
-			var i = 0, j = links.length;
-			for (; i < j; ++i) {
-				if (links[i].rel === "alternate") {
-					return links[i].href;
-				}
+	lastElementClicked,
+	loader = (function (el) {
+		return {
+			show: function () {
+				el.fadeIn();
+			},
+			hide: function () {
+				el.fadeOut();
 			}
+		};
+	}($("#loader"))),
+	youtube = (function () {
+		var base = service(matrices, postsPerRow, box, bodyWidth, postWidth, postHeight, loader, fetchAll), 
+		getVideoLink = function (links) {
+			return links.forEach(function (link) {
+				if (link.rel === "alternate") {
+					return link.href;
+				}
+			});
 
 			throw "No video link?";
 		};
@@ -49,13 +69,11 @@ window.fbAsyncInit = function () {
 			return base.fetch('https://gdata.youtube.com/feeds/api/users/' + id + '/uploads?callback=?&alt=json');
 		};
 		base.getNextUrl = function (response) {
-			var links = response.feed.link, i = 0, j = links.length;
-			for (; i < j; ++i) {
-				if (links[i].rel === "next") {
-					return links[i].href;
+			return response.feed.link.forEach(function (link) {
+				if (link.rel === "next") {
+					return link.href;
 				}
-			}
-
+			});
 		};
 
 		base.formatTime = function (time) {
@@ -66,17 +84,17 @@ window.fbAsyncInit = function () {
 		    $.getJSON('https://gdata.youtube.com/feeds/api/users/' + id + '?alt=json&callback=?', function (response) {
 				    var entry = response.entry, username = entry.yt$username.$t;
 
-				    base.renderInfo(elementInfo(entry.media$thumbnail.url, username, entry.yt$description.$t, 'http://www.youtube.com/user/' + username));
+				    base.renderInfo(elementInfo(entry.media$thumbnail.url, username, (entry.yt$description && entry.yt$description.$t) || "", 'http://www.youtube.com/user/' + username));
 		    });
 		};
 
 		base.getValidLinks = function (response) {
-			var entries = response.feed.entry, i = 0, j = entries.length, validLinks = [], post;
-			for(; i < j; ++i) {
-				post = entries[i];
+			var validLinks = [];
+			response.feed.entry.forEach(function (post) {
 				var l = link(post.published.$t, post.title.$t, getVideoLink(post.link), post.author[0].name.$t, post.author[0].name.$t);
 				validLinks.push(l);
-			}
+
+			});
 
 			return validLinks;
 		};
@@ -84,8 +102,26 @@ window.fbAsyncInit = function () {
 		return base;
 	}()),
 	facebook = (function () {
-		var base = service(matrices, postsPerRow, box, bodyWidth, postWidth, postHeight), token;
+		var base = service(matrices, postsPerRow, box, bodyWidth, postWidth, postHeight, loader, fetchAll), token;
 
+		base.submitWatchAction = function (url, success) {
+		    $.ajax({
+			url: "https://graph.facebook.com/me/video.watches",
+			type: 'post',
+			data: {
+				access_token: token,
+				video: url
+			},
+			success: function (response) {
+				success && success();
+			},
+			error: function (response) {
+				if (response.statusText === "OK") { // for whatever reason, the error function is being executed rather than the success even when the response is 200 OK -_- 
+					success && success();
+				}
+			}
+		    });
+		},
 		base.startFetching = function (id) {
 			return base.fetch('https://graph.facebook.com/' + id + '/feed?access_token=' + token + '&callback=?');
 		};
@@ -95,16 +131,14 @@ window.fbAsyncInit = function () {
 		};
 
 		base.getValidLinks = function (response) {
-		    var links = response.data, i = 0, j = links.length, validLinks = [], post;
-
-		    for (; i < j; ++i) {
-			post = links[i];
+		    var validLinks = [];
+		    response.data.forEach(function (post) {
 			if (!post.link || !youtubeEmbedBuilder.isYoutubeLink(post.link)) {
-			    continue;
+			    return;
 			}
 
 			validLinks.push(link(post.created_time, post.name, post.link, post.from.id, post.from.name));
-		    }
+		    });
 
 		    return validLinks;
 	        };
@@ -141,8 +175,6 @@ window.fbAsyncInit = function () {
 		return base;
 	}()),
         start = function (accessToken) {
-            $("#login").dialog("destroy").css({ display: 'block', height: '', 'min-height': '', width: '' }) // remove the css that the dialog leaves
-            .prependTo($('body'));
             var groupInfo = currentService.getObjectInfo(id);
 
             $("#loggedInContent").css('display', 'block');
@@ -152,7 +184,7 @@ window.fbAsyncInit = function () {
         },
 	getSelectedServiceName = function () {
 		return serviceSelect.val();
-	}
+	},
     	getServiceFromName = function (serviceName) {
 		switch (serviceName) {
 			case "facebook" : return facebook;
@@ -180,23 +212,6 @@ window.fbAsyncInit = function () {
         }
     });
 
-    facebook.isLoggedIn(function (accessToken) {
-        if (accessToken) {
-            start(accessToken);
-        } else {
-            $("#login").dialog({
-                title: "",
-                modal: true,
-                width: 106,
-                resizable: false,
-                open: function (event, ui) {
-                    $(".ui-dialog").css({ width: 106, height: 45 });
-                    $(".ui-dialog-titlebar-close").hide();
-                    $(".ui-dialog-titlebar").hide();
-                }
-            });
-        }
-    });
 
     // Load as you scroll
     $(window).scroll(function () {
@@ -218,32 +233,36 @@ window.fbAsyncInit = function () {
             return;
         }
 
+	lastElementClicked = element;
+
         postedDate = $("<p/>").addClass('post-date').html(currentService.formatTime(element.created));
         youtubeElement = youtubeEmbedBuilder.build(element.url, VIDEO_WIDTH, VIDEO_HEIGHT);
         modalContents.append(youtubeElement);
         modalContents.append($("<p/>").css({ 'padding-top': 5, float: 'right' }).html('Posted by <a href="http://www.facebook.com/' + element.poster.id + '" target="_blank">' + element.poster.name + '</a>'));
         modalContents.append(postedDate);
 
-        modalContents.dialog({
-            title: element.name,
-            modal: true,
-            closeOnEscape: true,
-            width: 420,
-            height: 411,
-            resizable: false
-        });
+	(function () {
+		var dialog = modalContents.dialog({
+			    title: element.name,
+			    modal: true,
+			    closeOnEscape: true,
+			    width: 420,
+			    height: 411,
+			    resizable: false,
+			    close: function () {
+				    lastElementClicked.actionDone = false; // reset it so that an action request can be sent next time this video is opened in the dialog again.
+				    dialog.remove();
+			    }
+		});
+	}());
     });
 
-    query.watermark(id);
-    query.keyup(function (e) {
-        var newLocation;
+    $("#query").watermark("ID");
+    $("#videosPerRow").watermark("Videos per row");
 
-        if (e.keyCode !== 13) {
-            return;
-        }
-
-        newLocation = location.protocol + '//' + location.host + location.pathname + '?' + ID_QUERY + '=' + query.val() + '&' + SERVICE_QUERY + '=' + getSelectedServiceName();
-        location.href = newLocation;
+    $("#fetchAll").button().click(function () {
+		    $(this).val("Fetching all...").attr('disabled', true);
+		    currentService.triggerFetchAll();
     });
 
     $("canvas").live("mousemove", function (e) {
@@ -260,7 +279,41 @@ window.fbAsyncInit = function () {
     $("#infoID").html(id);
     $("#infoService").html(serviceName);
     $("#infoPerRow").html(postsPerRow);
-    console.log(postsPerRow);
+
+    $("#submitSearch").button();
+    serviceSelect.val(serviceName);
+
+    $("#youtubeEmbed").live('mousedown', function () {
+		    var $this = $(this);
+		    if (!lastElementClicked.actionDone) {
+			    lastElementClicked.actionDone = true; // this is so that we don't send multiple action requests; when the dialog containing this video is closed, this boolean is reset to that another action can be sent for this video should the dialog with this video is opened again.
+			    facebook.submitWatchAction(lastElementClicked.url);
+		    }
+    });
 
     currentService = getServiceFromName(serviceName);
+
+    if (serviceName === "facebook") {
+	    facebook.isLoggedIn(function (accessToken) {
+		if (accessToken) {
+		    $("#login").dialog("destroy").css({ display: 'block', height: '', 'min-height': '', width: '' }) // remove the css that the dialog leaves
+		    .prependTo($('body'));
+		    start(accessToken);
+		} else {
+		    $("#login").dialog({
+			title: "",
+			modal: true,
+			width: 106,
+			resizable: false,
+			open: function (event, ui) {
+			    $(".ui-dialog").css({ width: 106, height: 45 });
+			    $(".ui-dialog-titlebar-close").hide();
+			    $(".ui-dialog-titlebar").hide();
+			}
+		    });
+		}
+	    });
+    } else {
+	    start();
+    }
 };

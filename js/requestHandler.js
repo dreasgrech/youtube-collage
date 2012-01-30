@@ -7,7 +7,7 @@ var requestHandler = (function () {
                 return;
             }
 
-            if (!url) { // We're done; no more links
+            if (!url) { 
                 return;
             }
 
