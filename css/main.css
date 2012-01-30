@@ -7,6 +7,14 @@ body {
 	text-align:justify;
 }
 
+.fb-like {
+	margin-top: 20px;
+}
+
+#beta {
+	color: red;
+}
+
 #title {
 	font-size:50px;
 	margin: 20px;
@@ -86,9 +94,7 @@ body {
 	opacity: 0.8;
 }
 
-#header {
-	padding: 20px;
-}
+#header { }
 
 #videosPerRow {
 	width: 100px;
@@ -99,4 +105,11 @@ body {
 	padding-top: 0px;
 	padding-bottom: 0px;
 
+}
+
+#error {
+	display: none;
+	color: #CD0A0A;
+	padding: 5px;
+	text-align: center;
 }

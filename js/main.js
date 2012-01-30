@@ -102,9 +102,22 @@ window.fbAsyncInit = function () {
 		return base;
 	}()),
 	facebook = (function () {
-		var base = service(matrices, postsPerRow, box, bodyWidth, postWidth, postHeight, loader, fetchAll), token;
+		var base = service(matrices, postsPerRow, box, bodyWidth, postWidth, postHeight, loader, fetchAll), token, isLoggedIn;
+
+		base.setLoggedIn = function (accessToken) {
+			if (!accessToken) {
+				return;
+			}
+
+			isLoggedIn = true;
+			token = accessToken;
+		};
 
 		base.submitWatchAction = function (url, success) {
+		    if (!isLoggedIn) { // Only submit the action if the user is logged into Facebook
+			return;
+		    }
+
 		    $.ajax({
 			url: "https://graph.facebook.com/me/video.watches",
 			type: 'post',
@@ -121,7 +134,8 @@ window.fbAsyncInit = function () {
 				}
 			}
 		    });
-		},
+		};
+
 		base.startFetching = function (id) {
 			return base.fetch('https://graph.facebook.com/' + id + '/feed?access_token=' + token + '&callback=?');
 		};
@@ -150,20 +164,13 @@ window.fbAsyncInit = function () {
 		base.isLoggedIn = function (callback) {
 			    FB.getLoginStatus(function (response) {
 				if (response.status === 'connected') { // the user is both logged in to FB and has authorized this app
+				    isLoggedIn = true;
 				    token = response.authResponse.accessToken;
 				    callback(token);
 				} else { // the user is either not logged in to FB or is logged in but hasn't yet authorized this app
 				    callback();
 				}
 			    });
-		};
-
-		base.accessToken = function (at) {
-			if (at) {
-				token = at;
-			}
-
-			return token;
 		};
 
 		base.getObjectInfo = function (id) {
@@ -174,12 +181,24 @@ window.fbAsyncInit = function () {
 
 		return base;
 	}()),
+	error = (function () {
+		var el = $("#error");
+
+		return {
+			show: function (message) {
+				el.html(message).slideDown();
+			},
+			hide: function () {
+				el.slideUp();
+			}
+		};
+	}()),
         start = function (accessToken) {
             var groupInfo = currentService.getObjectInfo(id);
 
             $("#loggedInContent").css('display', 'block');
 
-	    facebook.accessToken(accessToken);
+	    facebook.setLoggedIn(accessToken);
             currentService.startFetching(id);
         },
 	getSelectedServiceName = function () {
@@ -203,6 +222,8 @@ window.fbAsyncInit = function () {
     });
 
     FB.Event.subscribe('auth.login', function (response) {
+        var token = response.authResponse.accessToken;
+	error.hide();
         start(response.authResponse.accessToken);
     });
 
@@ -293,19 +314,25 @@ window.fbAsyncInit = function () {
 
     currentService = getServiceFromName(serviceName);
 
+    facebook.isLoggedIn(function (accessToken) { // TODO: continue working here
+	facebook.setLoggedIn(accessToken);
+	if (!accessToken && serviceName === "facebook") { // user is trying to see videos from Facebook but is not logged in, so he can't
+		error.show("To view videos from Facebook, you must first be logged in to Facebook.");
+		return;
+	}
+
+	start(accessToken);
+    });
+
+    /*
     if (serviceName === "facebook") {
 	    facebook.isLoggedIn(function (accessToken) {
 		if (accessToken) {
-		    $("#login").dialog("destroy").css({ display: 'block', height: '', 'min-height': '', width: '' }) // remove the css that the dialog leaves
-		    .prependTo($('body'));
+		    //$("#login").dialog("destroy").css({ display: 'block', height: '', 'min-height': '', width: '' }) // remove the css that the dialog leaves
+		    //.prependTo($('body'));
 		    start(accessToken);
 		} else {
-		    $("#login").dialog({
-			title: "",
-			modal: true,
-			width: 106,
-			resizable: false,
-			open: function (event, ui) {
+		    $("#login").dialog({ title: "", modal: true, width: 106, resizable: false, open: function (event, ui) {
 			    $(".ui-dialog").css({ width: 106, height: 45 });
 			    $(".ui-dialog-titlebar-close").hide();
 			    $(".ui-dialog-titlebar").hide();
@@ -316,4 +343,5 @@ window.fbAsyncInit = function () {
     } else {
 	    start();
     }
+    */
 };

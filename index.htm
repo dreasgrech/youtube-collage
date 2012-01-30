@@ -38,18 +38,23 @@
 		</script>
 
 		<div id="header">
+			<div class="ui-state-error" id="error"></div>
 			<div id="login">
 				<fb:login-button autologoutlink="true" data-scope="read_stream,offline_access"> </fb:login-button>
 			</div>
-			<div id="title">YouTube Collage</div>
+			<div id="title">
+				YouTube Collage <span id="beta">[beta]</span>
+				<div style="display: block" class="fb-like" data-href="http://www.dreasgrech.com/upload/fbgrouptubes/" data-send="true" data-width="450" data-show-faces="true"></div>
+			</div>
 			<div>
 				<p>This application creates a collage of YouTube videos.</p>
 
 				<p>Currently, two services from where videos can be fetched are supported: Facebook and Youtube.</p>
 
-				<p>For Youtube, you need to use the username of the uploader and it will fetch the videos that were uploaded by that person, and for Facebook you need to use an entity's (Person, Group or Page) ID (which you can get from the URL) and it will fetch the videos that are posted on that entity's wall.</p>
+				<p>For YouTube, you need to use the username of the uploader and it will fetch the videos that were uploaded by that person, and for Facebook you need to use an entity's (Person, Group or Page) ID (which you can get from the URL) and it will fetch the videos that are posted on that entity's wall.</p>
 
-				<p>Written by <a href="http://dreasgrech.com" target="_blank">Andreas Grech</a></p>
+				<p>The full source of this page can be found at <a href="https://github.com/dreasgrech/youtube-collage" target="_blank">here</a>.</p>
+				<p>Written by <a href="http://dreasgrech.com" target="_blank">Andreas Grech</a>.</p>
 			</div>
 			<div id="search">
 				<form method="get">
@@ -68,9 +73,7 @@
 					<tr><td>Service</td><td id="infoService"></td></tr>
 					<tr><td>Videos per row</td><td id="infoPerRow"></td></tr>
 				</table>
-
 			</div>
-<div class="fb-like" data-href="http://www.dreasgrech.com/upload/fbgrouptubes/" data-send="true" data-width="450" data-show-faces="true"></div>
 			<div class="toclear"></div>
 		</div>
 		<hr/>
