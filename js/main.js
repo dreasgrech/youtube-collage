@@ -197,6 +197,7 @@ window.fbAsyncInit = function () {
             var groupInfo = currentService.getObjectInfo(id);
 
             $("#loggedInContent").css('display', 'block');
+            $("#info").css('display', 'block');
 
 	    facebook.setLoggedIn(accessToken);
             currentService.startFetching(id);
@@ -211,7 +212,33 @@ window.fbAsyncInit = function () {
 		}
 
 		return getServiceFromName(SERVICE_DEFAULT);
-	};
+	},
+	canvasMouseMove = function (e) {
+		var element = matrices.getElementUnderMouse(e.pageX, e.pageY), $this = $(this);
+
+		if (!element) {
+		    $this.css({cursor: ''});
+		    tooltip.hide();
+		    return;
+		}
+
+		//console.log(element);
+		tooltip.show(e.pageX, e.pageY, element.name);
+
+		$this.css({cursor: 'pointer'});
+	},
+	tooltip = (function () {
+		var el = $("#tooltip").mousemove(canvasMouseMove);
+
+		return {
+			show: function (x, y, name) {
+				el.css({display: 'block', left: x + 5, top: y + 5}).html(name);
+			},
+			hide: function () {
+				el.css('display', 'none');
+			}
+		}
+	}());
 
     FB.init({
         appId: APP_ID,
@@ -286,17 +313,11 @@ window.fbAsyncInit = function () {
 		    currentService.triggerFetchAll();
     });
 
-    $("canvas").live("mousemove", function (e) {
-        var element = matrices.getElementUnderMouse(e.pageX, e.pageY), $this = $(this);
+    $("canvas").live("mousemove", canvasMouseMove);
 
-        if (!element) {
-            $this.css({cursor: ''});
-            return;
-        }
-
-        $this.css({cursor: 'pointer'});
+    $("#beforeCollage").mousemove(function (e) {
+	tooltip.hide();
     });
-
     $("#infoID").html(id);
     $("#infoService").html(serviceName);
     $("#infoPerRow").html(postsPerRow);
@@ -323,25 +344,4 @@ window.fbAsyncInit = function () {
 
 	start(accessToken);
     });
-
-    /*
-    if (serviceName === "facebook") {
-	    facebook.isLoggedIn(function (accessToken) {
-		if (accessToken) {
-		    //$("#login").dialog("destroy").css({ display: 'block', height: '', 'min-height': '', width: '' }) // remove the css that the dialog leaves
-		    //.prependTo($('body'));
-		    start(accessToken);
-		} else {
-		    $("#login").dialog({ title: "", modal: true, width: 106, resizable: false, open: function (event, ui) {
-			    $(".ui-dialog").css({ width: 106, height: 45 });
-			    $(".ui-dialog-titlebar-close").hide();
-			    $(".ui-dialog-titlebar").hide();
-			}
-		    });
-		}
-	    });
-    } else {
-	    start();
-    }
-    */
 };
