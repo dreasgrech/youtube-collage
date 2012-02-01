@@ -4,7 +4,6 @@ body {
 	color: #333333;
 	font-family: "Lucida Grande", Tahoma, Verdana, Arial, sans-serif;
 	line-height:18px;
-	text-align:justify;
 }
 
 .bold {
@@ -17,6 +16,14 @@ body {
 
 .fb-like {
 	margin-top: 20px;
+}
+
+#logs {
+	width: 300px;
+	height: 100px;
+	overflow: auto;
+	border: 1px solid black;
+	font-size: 10px;
 }
 
 #beta {
@@ -70,6 +77,7 @@ body {
 
 #startText {
 	padding: 20px;
+	text-align:justify;
 }
 
 .toclear {

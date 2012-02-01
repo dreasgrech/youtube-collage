@@ -5,7 +5,7 @@
 		<link rel="stylesheet" type="text/css" href="css/reset.css" />
 		<link rel="stylesheet" type="text/css" href="css/main.css" />
 		<link type="text/css" href="css/ui-darkness/jquery-ui-1.8.17.custom.css" rel="stylesheet" />	
-		<link rel="icon" type="image/png" id="favicon"> 
+		<link rel="icon" type="image/png" id="favicon"/> 
 		<meta property="og:title" content="YouTube Collage" />
 		<meta property="og:description" content="Builds a collage of YouTube videos" />
 		<meta property="og:type" content="website" />
@@ -44,7 +44,7 @@
 			<div id="header">
 				<div class="ui-state-error" id="error"></div>
 				<div id="login">
-					<fb:login-button autologoutlink="true" data-scope="read_stream,offline_access"> </fb:login-button>
+					<fb:login-button autologoutlink="true" data-scope="read_stream,publish_actions"> </fb:login-button>
 				</div>
 				<div id="title">
 					YouTube Collage <span id="beta">[beta]</span>
@@ -73,6 +73,7 @@
 						<input type="submit" value="Go" id="submitSearch"/>
 					</form>
 				</div>
+				<div id="logs"></div>
 				<div id="currentInfo">
 					<table>
 						<tr><td>ID</td><td id="infoID"></td></tr>
@@ -85,7 +86,7 @@
 			<hr/>
 			<div id="info">
 				<a id="grouplink" target="_blank"><span id="grouptitle"></span></a>
-				<input type="button" value="Fetch all" id="fetchAll" title="Fetch all videos"/>
+				<input type="button" value="Fetch all" id="fetchAll" title="Fetch all videos automatically"/>
 				<p id="groupdescription"></p>
 			</div>
 		</div>

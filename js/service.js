@@ -1,5 +1,6 @@
-var service = function (matrices, postsPerRow, box, bodyWidth, postWidth, postHeight, loader, fetchAll) {
-        var nextUrl, lastCol = 0,
+var service = function (matrices, postsPerRow, box, bodyWidth, postWidth, postHeight, loader, logger, fetchAll) {
+        var nextUrl,
+	    lastCol = 0,
             lastRow = 0,
             lastCtx, drawImages = function (ctx, links, column, row) {
                 var i = 0,
@@ -9,12 +10,12 @@ var service = function (matrices, postsPerRow, box, bodyWidth, postWidth, postHe
                     if (!links[i]) {
                         continue;
                     }(function (ctx, link, startCol, startRow) {
-                        var img = new Image();
-                        img.onload = function () {
-                            ctx.drawImage(img, startCol * postWidth, startRow * postHeight, postWidth, postHeight);
-                        };
+			var img = new Image();
+			img.onload = function () {
+			    ctx.drawImage(img, startCol * postWidth, startRow * postHeight, postWidth, postHeight);
+			};
 
-                        img.src = 'http://img.youtube.com/vi/' + youtubeEmbedBuilder.getVideoID(link) + '/0.jpg';
+			img.src = 'http://img.youtube.com/vi/' + youtubeEmbedBuilder.getVideoID(link) + '/0.jpg';
                     }(ctx, links[i].url, column, row));
                     column = (column + 1) % postsPerRow;
                     if (!column) {
@@ -55,22 +56,21 @@ var service = function (matrices, postsPerRow, box, bodyWidth, postWidth, postHe
                 return validLinks.length;
             },
             fetch = function (url) {
-                if (!(url = url || nextUrl)) {
-                    // there is no next url, so don't fetch anything
+	        var willCallHappen;
+
+                if (!(url = url || nextUrl)) { // there is no next url, so don't fetch anything
+		    logger.log('No more data to fetch');
+		    loader.hide();
                     return;
                 }
 
                 loader.show();
-                requestHandler.fetch(url, function (response) {
+                willCallHappen = requestHandler.fetch(url, function (response) {
+		    logger.log('Fetch successful');
                     var validLinks = obj.getValidLinks(response);
                     nextUrl = obj.getNextUrl(response);
 
                     handleData(validLinks);
-
-                    if (!nextUrl) {
-                        loader.hide();
-                        return;
-                    }
 
                     var totalHeightYet = matrices.getTotalHeight();
                     if (totalHeightYet < $(window).height()) { // we still haven't filled the first page yet, so continue fetching
@@ -83,6 +83,10 @@ var service = function (matrices, postsPerRow, box, bodyWidth, postWidth, postHe
                         loader.hide();
                     }
                 });
+
+		if (willCallHappen) {
+		    logger.log('Fetching from ' + url);
+		}
             },
             buildTitle = function (name) {
                 return "YouTube Collage - " + name;

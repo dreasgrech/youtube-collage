@@ -1,6 +1,5 @@
 var matrixCollection = function (box, postWidth, postHeight, postsPerRow) {
-    var list = [],
-        // holds the list of matrices
+    var list = [], // holds the list of matrices
         getTotalHeight = function () {
             var i = 0,
                 j = list.length,
@@ -27,7 +26,7 @@ var matrixCollection = function (box, postWidth, postHeight, postsPerRow) {
         getElementUnderMouse: function (clickX, clickY) {
             var m, i = 0,
                 j = list.length,
-                totalHeight = helpers.getElementAbsoluteY(box.find("canvas")[0]);
+                totalHeight = helpers.getElementAbsoluteY(box.find("canvas")[0]); // start accumulating from the absolute position of where the first canvas is.
             for (; i < j; ++i) {
                 if (totalHeight + list[i].getHeight() > clickY) {
                     m = list[i];
@@ -36,13 +35,13 @@ var matrixCollection = function (box, postWidth, postHeight, postsPerRow) {
 
                 totalHeight += list[i].getHeight();
             }
-            if (!m) {
+            if (!m) { // no element found in the given coordinates
                 return;
             }
 
-            var yPosInM = clickY - totalHeight;
-            var matrixCell = Math.ceil(clickX / postWidth) - 1;
-            var matrixRow = Math.ceil(yPosInM / postHeight) - 1;
+            var yPosInM = clickY - totalHeight,
+		matrixCell = Math.ceil(clickX / postWidth) - 1,
+		matrixRow = Math.ceil(yPosInM / postHeight) - 1;
 
             return m.cells[(matrixRow * postsPerRow) + matrixCell];
         },

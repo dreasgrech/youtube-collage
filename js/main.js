@@ -19,13 +19,13 @@ Array.prototype.forEach = function (callback) {
 
 window.fbAsyncInit = function () {
     var APP_ID = '367186123307673',
-        DEFAULT_ID = '13601226661',
+        DEFAULT_ID = 'darublues', //'13601226661',
         ID_QUERY = 'id',
         POSTS_PER_ROW_QUERY = 'perrow',
         SERVICE_QUERY = 'service',
         FETCH_ALL_QUERY = 'all',
         POSTS_PER_ROW_DEFAULT = 10,
-        SERVICE_DEFAULT = "facebook",
+        SERVICE_DEFAULT = 'youtube', //'facebook',
         FETCH_ALL_DEFAULT = false,
         VIDEO_WIDTH = 385,
         VIDEO_HEIGHT = 315,
@@ -34,7 +34,7 @@ window.fbAsyncInit = function () {
         box = $("#box"),
         serviceSelect = $("#serviceSelect"),
         lastCtx, // the last canvas context that we drew on
-        bodyWidth = $('body').innerWidth() - $.getScrollBarSize().horizontal,
+        bodyWidth = $('body').innerWidth() - $.getScrollbarWidth(),
 	elementInfo = pojo('icon', 'name', 'description', 'link'),
         fetchAll = queryString.getParameterByName(window.location.href, FETCH_ALL_QUERY) || FETCH_ALL_DEFAULT,
         postsPerRow = queryString.getParameterByName(window.location.href, POSTS_PER_ROW_QUERY) || POSTS_PER_ROW_DEFAULT,
@@ -44,6 +44,22 @@ window.fbAsyncInit = function () {
 	serviceName = queryString.getParameterByName(window.location.href, SERVICE_QUERY) || SERVICE_DEFAULT,
 	matrices = matrixCollection(box, postWidth, postHeight, postsPerRow),
 	lastElementClicked,
+	userLink = {
+		youtube :'http://www.youtube.com/user/',
+		facebook :'http://www.facebook.com/'
+	},
+	logger = (function (el) {
+		var add = function (message, color) {
+			el.append($("<span/>").css({display: 'block', color: color}).html(message));
+			el[0].scrollTop = el[0].scrollHeight; // scroll to the bottom
+		};
+
+		return {
+			log: function (message) {
+				add(message, 'black');
+			}
+		};
+	}($("#logs"))),
 	loader = (function (el) {
 		return {
 			show: function () {
@@ -55,7 +71,7 @@ window.fbAsyncInit = function () {
 		};
 	}($("#loader"))),
 	youtube = (function () {
-		var base = service(matrices, postsPerRow, box, bodyWidth, postWidth, postHeight, loader, fetchAll), 
+		var base = service(matrices, postsPerRow, box, bodyWidth, postWidth, postHeight, loader, logger, fetchAll), 
 		getVideoLink = function (links) {
 			return links.forEach(function (link) {
 				if (link.rel === "alternate") {
@@ -103,7 +119,7 @@ window.fbAsyncInit = function () {
 		return base;
 	}()),
 	facebook = (function () {
-		var base = service(matrices, postsPerRow, box, bodyWidth, postWidth, postHeight, loader, fetchAll), token, isLoggedIn;
+		var base = service(matrices, postsPerRow, box, bodyWidth, postWidth, postHeight, loader, logger, fetchAll), token, isLoggedIn;
 
 		base.setLoggedIn = function (accessToken) {
 			if (!accessToken) {
@@ -119,6 +135,7 @@ window.fbAsyncInit = function () {
 			return;
 		    }
 
+		    logger.log('Publishing watch action to Facebook');
 		    $.ajax({
 			url: "https://graph.facebook.com/me/video.watches",
 			type: 'post',
@@ -147,6 +164,7 @@ window.fbAsyncInit = function () {
 
 		base.getValidLinks = function (response) {
 		    var validLinks = [];
+		    logger.log('Received ' + response.data.length + ' posts from Facebook');
 		    response.data.forEach(function (post) {
 			if (!post.link || !youtubeEmbedBuilder.isYoutubeLink(post.link)) {
 			    return;
@@ -154,6 +172,8 @@ window.fbAsyncInit = function () {
 
 			validLinks.push(link(post.created_time, post.name, post.link, post.from.id, post.from.name));
 		    });
+
+		    logger.log('Filtered the list to ' + validLinks.length + ' posts which contain YouTube videos');
 
 		    return validLinks;
 	        };
@@ -176,7 +196,8 @@ window.fbAsyncInit = function () {
 
 		base.getObjectInfo = function (id) {
 		    $.getJSON('https://graph.facebook.com/' + id + '?access_token=' + token + '&callback=?', function (response) {
-		        base.renderInfo(elementInfo(response.icon, response.name, response.description, 'https://www.facebook.com/' + response.id));
+				    var pic = 'https://graph.facebook.com/' + response.id + '/picture';
+		        base.renderInfo(elementInfo(pic, response.name, response.description, 'https://www.facebook.com/' + response.id));
 		    });
 		};
 
@@ -263,7 +284,8 @@ window.fbAsyncInit = function () {
 
     // Load as you scroll
     $(window).scroll(function () {
-        if (($(window).scrollTop() + 1) >= $(document).height() - $(window).height()) { // the ( + 1) is because in Firefox, the scrollTop was never reaching the window height...always a step less; this addition compensates it.
+        var margin = 300; // the margin should be >= 1 because in Firefox the scrollTop was never reaching the window height...always a step less; this addition compensates it.
+        if (($(window).scrollTop() + margin) >= $(document).height() - $(window).height()) {
             currentService.fetch();
         }
     });
@@ -275,18 +297,19 @@ window.fbAsyncInit = function () {
     });
 
     box.click(function (e) {
-        var element = matrices.getElementUnderMouse(e.pageX, e.pageY), modalContents = $("<div/>"), youtubeElement, postedDate;
+        var element = matrices.getElementUnderMouse(e.pageX, e.pageY), modalContents = $("<div/>"), youtubeElement, postedDate, link;
 
         if (!element) {
             return;
         }
-
+	
 	lastElementClicked = element;
+	link = userLink[serviceName] + element.poster.id;
 
         postedDate = $("<p/>").addClass('post-date').html(currentService.formatTime(element.created));
         youtubeElement = youtubeEmbedBuilder.build(element.url, VIDEO_WIDTH, VIDEO_HEIGHT);
         modalContents.append(youtubeElement);
-        modalContents.append($("<p/>").css({ 'padding-top': 5, float: 'right' }).html('Posted by <a href="http://www.facebook.com/' + element.poster.id + '" target="_blank">' + element.poster.name + '</a>'));
+        modalContents.append($("<p/>").css({ 'padding-top': 5, float: 'right' }).html('Posted by <a href="' + link + '" target="_blank">' + element.poster.name + '</a>'));
         modalContents.append(postedDate);
 
 	(function () {
@@ -341,4 +364,5 @@ window.fbAsyncInit = function () {
 
 	start(accessToken);
     });
+
 };
