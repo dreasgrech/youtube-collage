@@ -7,6 +7,14 @@ body {
 	text-align:justify;
 }
 
+.bold {
+	font-weight: bold;
+}
+
+.italic {
+	font-style: italic;
+}
+
 .fb-like {
 	margin-top: 20px;
 }
@@ -58,6 +66,10 @@ body {
 #info {
 	padding: 20px;
 	display: none;
+}
+
+#startText {
+	padding: 20px;
 }
 
 .toclear {

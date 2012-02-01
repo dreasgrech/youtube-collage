@@ -34,7 +34,8 @@ window.fbAsyncInit = function () {
         box = $("#box"),
         serviceSelect = $("#serviceSelect"),
         lastCtx, // the last canvas context that we drew on
-        bodyWidth = $('body').innerWidth(),
+        bodyWidth = $('body').innerWidth() - $.getScrollBarSize().horizontal,
+	elementInfo = pojo('icon', 'name', 'description', 'link'),
         fetchAll = queryString.getParameterByName(window.location.href, FETCH_ALL_QUERY) || FETCH_ALL_DEFAULT,
         postsPerRow = queryString.getParameterByName(window.location.href, POSTS_PER_ROW_QUERY) || POSTS_PER_ROW_DEFAULT,
         postWidth = Math.floor(bodyWidth / postsPerRow), // cell width
@@ -222,7 +223,6 @@ window.fbAsyncInit = function () {
 		    return;
 		}
 
-		//console.log(element);
 		tooltip.show(e.pageX, e.pageY, element.name);
 
 		$this.css({cursor: 'pointer'});
@@ -315,9 +315,7 @@ window.fbAsyncInit = function () {
 
     $("canvas").live("mousemove", canvasMouseMove);
 
-    $("#beforeCollage").mousemove(function (e) {
-	tooltip.hide();
-    });
+    $("#beforeCollage").mousemove(tooltip.hide);
     $("#infoID").html(id);
     $("#infoService").html(serviceName);
     $("#infoPerRow").html(postsPerRow);
@@ -326,7 +324,6 @@ window.fbAsyncInit = function () {
     serviceSelect.val(serviceName);
 
     $("#youtubeEmbed").live('mousedown', function () {
-		    var $this = $(this);
 		    if (!lastElementClicked.actionDone) {
 			    lastElementClicked.actionDone = true; // this is so that we don't send multiple action requests; when the dialog containing this video is closed, this boolean is reset to that another action can be sent for this video should the dialog with this video is opened again.
 			    facebook.submitWatchAction(lastElementClicked.url);
@@ -338,7 +335,7 @@ window.fbAsyncInit = function () {
     facebook.isLoggedIn(function (accessToken) { // TODO: continue working here
 	facebook.setLoggedIn(accessToken);
 	if (!accessToken && serviceName === "facebook") { // user is trying to see videos from Facebook but is not logged in, so he can't
-		error.show("To view videos from Facebook, you must first be logged in to Facebook.");
+		error.show("You are trying to view videos from Facebook. Please login first using the button on the right side.");
 		return;
 	}
 
