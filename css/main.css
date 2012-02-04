@@ -18,12 +18,32 @@ body {
 	margin-top: 20px;
 }
 
-#logs {
-	width: 300px;
-	height: 100px;
-	overflow: auto;
+.widgetTitle {
+	text-align: center;
+	color: white;
+	background-color: black;
+	border-top-left-radius: 10px;
+	border-top-right-radius: 10px;
+}
+
+.widgetContent {
+	height: inherit;
 	border: 1px solid black;
+}
+
+#logsContainer {
+	width: 300px;
+	float: right;
+	margin-left: 10px;
+	margin-bottom: 10px;
+	text-align: left;
+	height: 200px;
+}
+
+#logs {
+	overflow: auto;
 	font-size: 10px;
+	padding: 5px;
 }
 
 #beta {
@@ -107,6 +127,14 @@ body {
 
 #currentInfo {
 	margin-top:10px;
+	margin-left:20px;
+	margin-right: 40px;
+	width: 250px;
+	float: right;
+}
+
+#currentInfo table td {
+	padding: 5px;
 }
 
 #submitSearch {
@@ -123,8 +151,6 @@ body {
 	border-bottom-left-radius: 15px;
 	opacity: 0.8;
 }
-
-#header { }
 
 #videosPerRow {
 	width: 100px;

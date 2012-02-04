@@ -36,12 +36,23 @@ window.fbAsyncInit = function () {
         lastCtx, // the last canvas context that we drew on
         bodyWidth = $('body').innerWidth() - $.getScrollbarWidth(),
 	elementInfo = pojo('icon', 'name', 'description', 'link'),
-        fetchAll = queryString.getParameterByName(window.location.href, FETCH_ALL_QUERY) || FETCH_ALL_DEFAULT,
-        postsPerRow = queryString.getParameterByName(window.location.href, POSTS_PER_ROW_QUERY) || POSTS_PER_ROW_DEFAULT,
+	queryStringValues = (function () {
+			var url = window.location.href;
+
+			// TODO: The getters on this should be functions so that they're read-only, but whatever.
+			return {
+				id: queryString.getParameterByName(window.location.href, ID_QUERY),
+				service: queryString.getParameterByName(window.location.href, SERVICE_QUERY),
+				fetchAll: queryString.getParameterByName(window.location.href, FETCH_ALL_QUERY),
+				postsPerRow: queryString.getParameterByName(window.location.href, POSTS_PER_ROW_QUERY)
+			};
+	}()),
+        fetchAll = queryStringValues.fetchAll || FETCH_ALL_DEFAULT,
+        postsPerRow = queryStringValues.postsPerRow || POSTS_PER_ROW_DEFAULT,
         postWidth = Math.floor(bodyWidth / postsPerRow), // cell width
         postHeight = postWidth, // cell height
-        id = queryString.getParameterByName(window.location.href, ID_QUERY) || DEFAULT_ID,
-	serviceName = queryString.getParameterByName(window.location.href, SERVICE_QUERY) || SERVICE_DEFAULT,
+        id = queryStringValues.id || DEFAULT_ID,
+	serviceName = queryStringValues.service || SERVICE_DEFAULT,
 	matrices = matrixCollection(box, postWidth, postHeight, postsPerRow),
 	lastElementClicked,
 	userLink = {
@@ -50,6 +61,7 @@ window.fbAsyncInit = function () {
 	},
 	logger = (function (el) {
 		var add = function (message, color) {
+			message = "> " + message;
 			el.append($("<span/>").css({display: 'block', color: color}).html(message));
 			el[0].scrollTop = el[0].scrollHeight; // scroll to the bottom
 		};
@@ -196,7 +208,7 @@ window.fbAsyncInit = function () {
 
 		base.getObjectInfo = function (id) {
 		    $.getJSON('https://graph.facebook.com/' + id + '?access_token=' + token + '&callback=?', function (response) {
-				    var pic = 'https://graph.facebook.com/' + response.id + '/picture';
+		        var pic = 'https://graph.facebook.com/' + response.id + '/picture';
 		        base.renderInfo(elementInfo(pic, response.name, response.description, 'https://www.facebook.com/' + response.id));
 		    });
 		};
@@ -261,18 +273,13 @@ window.fbAsyncInit = function () {
 		}
 	}());
 
-    FB.init({
-        appId: APP_ID,
-        status: true,
-        cookie: true,
-        xfbml: true,
-        oauth: true
-    });
+    FB.init({ appId: APP_ID, status: true, cookie: true, xfbml: true, oauth: true });
 
     FB.Event.subscribe('auth.login', function (response) {
-        var token = response.authResponse.accessToken;
+        var accessToken = response.authResponse.accessToken;
 	error.hide();
-        start(response.authResponse.accessToken);
+	facebook.setLoggedIn(accessToken);
+        start(accessToken);
     });
 
     FB.Event.subscribe('auth.logout', function (response) {
@@ -328,8 +335,8 @@ window.fbAsyncInit = function () {
 	}());
     });
 
-    $("#query").watermark("ID");
-    $("#videosPerRow").watermark("Videos per row");
+    $("#query").watermark("ID").val(queryStringValues.id);
+    $("#videosPerRow").watermark("Videos per row").val(queryStringValues.postsPerRow);
 
     $("#fetchAll").button().click(function () {
 		    $(this).val("Fetching all...").attr('disabled', true);
@@ -355,7 +362,7 @@ window.fbAsyncInit = function () {
 
     currentService = getServiceFromName(serviceName);
 
-    facebook.isLoggedIn(function (accessToken) { // TODO: continue working here
+    facebook.isLoggedIn(function (accessToken) {  /// TODO: this callback is not always being invoked?
 	facebook.setLoggedIn(accessToken);
 	if (!accessToken && serviceName === "facebook") { // user is trying to see videos from Facebook but is not logged in, so he can't
 		error.show("You are trying to view videos from Facebook. Please login first using the button on the right side.");

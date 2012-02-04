@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html> 
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:fb="http://ogp.me/ns/fb#">
 	<head> 
 		<title>YouTube Collage</title> 
 		<link rel="stylesheet" type="text/css" href="css/reset.css" />
@@ -31,14 +31,6 @@
 		<script src="js/service.js"></script>
 		<script src="js/youtubeEmbedBuilder.js"></script>
 		<script src="js/main.js"></script>
-		<script>
-        (function(d){
-           var js, id = 'facebook-jssdk'; if (d.getElementById(id)) {return;}
-           js = d.createElement('script'); js.id = id; js.async = true;
-           js.src = "//connect.facebook.net/en_US/all.js";
-           d.getElementsByTagName('head')[0].appendChild(js);
-         }(document));
-		</script>
 
 		<div id="beforeCollage">
 			<div id="header">
@@ -48,9 +40,13 @@
 				</div>
 				<div id="title">
 					YouTube Collage <span id="beta">[beta]</span>
-					<div style="display: block" class="fb-like" data-href="http://www.dreasgrech.com/upload/fbgrouptubes/" data-send="true" data-width="450" data-show-faces="true"></div>
+					<div style="display: block" class="fb-like" data-href="http://www.dreasgrech.com/upload/youtubecollage/" data-send="true" data-width="450" data-show-faces="true"></div>
 				</div>
 				<div id="startText">
+					<div id="logsContainer">
+						<div class="widgetTitle">LOGS</div>
+						<div id="logs" class="widgetContent"></div>
+					</div>
 					<p>This application creates a collage of YouTube videos.</p>
 
 					<p>Currently, two services from where videos can be fetched are supported: Facebook and Youtube.</p>
@@ -61,6 +57,7 @@
 
 					<p>The full source of this page can be found at <a href="https://github.com/dreasgrech/youtube-collage" target="_blank">here</a>.  It is written solely in JavaScript.</p>
 					<p>Written by <a href="http://dreasgrech.com" target="_blank">Andreas Grech</a>.</p>
+					<div class="toclear"></div>
 				</div>
 				<div id="search">
 					<form method="get">
@@ -73,13 +70,15 @@
 						<input type="submit" value="Go" id="submitSearch"/>
 					</form>
 				</div>
-				<div id="logs"></div>
 				<div id="currentInfo">
-					<table>
-						<tr><td>ID</td><td id="infoID"></td></tr>
-						<tr><td>Service</td><td id="infoService"></td></tr>
-						<tr><td>Videos per row</td><td id="infoPerRow"></td></tr>
-					</table>
+					<div class="widgetTitle">Current Object</div>
+					<div class="widgetContent">
+						<table>
+							<tr><td>ID</td><td id="infoID"></td></tr>
+							<tr><td>Service</td><td id="infoService"></td></tr>
+							<tr><td>Videos per row</td><td id="infoPerRow"></td></tr>
+						</table>
+					</div>
 				</div>
 				<div class="toclear"></div>
 			</div>
@@ -103,6 +102,18 @@
 		
 		<div id="tooltip" class="ui-widget-content"></div>
 
+		<script>
+			/*
+			 * Make sure that this FB initialization code RUNS AFTER window.fbAsyncInit (in main.js)
+			 */
+			(function(d, s, id) {
+			  var js, fjs = d.getElementsByTagName(s)[0];
+			  if (d.getElementById(id)) return;
+			  js = d.createElement(s); js.id = id;
+			  js.src = "//connect.facebook.net/en_GB/all.js#xfbml=1&appId=367186123307673";
+			  fjs.parentNode.insertBefore(js, fjs);
+			  }(document, 'script', 'facebook-jssdk'));
+		</script>
 		<script>
 		  var _gaq = _gaq || [];
 		  _gaq.push(['_setAccount', 'UA-11446482-8']);
