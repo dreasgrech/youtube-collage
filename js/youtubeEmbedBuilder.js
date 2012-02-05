@@ -17,13 +17,13 @@ var youtubeEmbedBuilder = (function () {
     return {
         build: function (link, width, height) {
             var embedLink = 'http://www.youtube.com/v/' + getVideoID(link),
-		container = $("<div/>"),//.attr('id', 'youtubeEmbed'),
+		container = $("<div/>").attr('id', 'youtubeEmbed'),
                 embed = $('<object id="youtubeEmbed" type="application/x-shockwave-flash" data="' + embedLink + '?version=3"/>').css({width: width, height: height});
             embed.append($('<param name="movie" value="' + embedLink + '?version=3" />'));
             embed.append($('<param name="allowFullScreen" value="true" />'));
             embed.append($('<param name="wmode" value="transparent" />'));
             embed.append($('<param name="allowscriptaccess" value="always" />'));
-	    container.append(embed);
+	    //container.append(embed); // TODO: working on it
             return container;
         },
         isYoutubeLink: function (link) {

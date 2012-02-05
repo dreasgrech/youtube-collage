@@ -9,7 +9,25 @@ var matrixCollection = function (box, postWidth, postHeight, postsPerRow) {
             }
 
             return total;
-        };
+        },
+	expandIndex = function (index) {
+		return {
+			matrixIndex : index >> 8,
+			elementIndex : index & 0xFF
+		};
+	},
+	generateIndex = function (matrixIndex, elementIndex) {
+	    return (matrixIndex << 8) + elementIndex;
+	},
+	getElementFromIndex = function (index) {
+		var expandedIndex = expandIndex(index), thisMatrix = list[expandedIndex.matrixIndex];
+		if (!thisMatrix) {
+			return;
+		}
+
+		return thisMatrix.cells[expandedIndex.elementIndex];
+	};
+
     return {
         push: function (m) {
             list.push(m);
@@ -23,6 +41,20 @@ var matrixCollection = function (box, postWidth, postHeight, postsPerRow) {
         length: function () {
             return list.length;
         },
+	getNextElement: function (index) {
+		var expandedIndex = expandIndex(index),
+		    matrixIndex = expandedIndex.matrixIndex,
+		    elementIndex = expandedIndex.elementIndex;
+
+		if (elementIndex === list[expandedIndex.matrixIndex].cells.length - 1) { // the last element in the matrix
+			matrixIndex++;
+			elementIndex = 0;
+		} else {
+			elementIndex++;
+		}
+
+		return getElementFromIndex(generateIndex(matrixIndex, elementIndex));
+	},
         getElementUnderMouse: function (clickX, clickY) {
             var m, i = 0,
                 j = list.length,
@@ -35,15 +67,22 @@ var matrixCollection = function (box, postWidth, postHeight, postsPerRow) {
 
                 totalHeight += list[i].getHeight();
             }
-            if (!m) { // no element found in the given coordinates
+            if (!m) { // no matrix found in the given coordinates
                 return;
             }
 
             var yPosInM = clickY - totalHeight,
 		matrixCell = Math.ceil(clickX / postWidth) - 1,
-		matrixRow = Math.ceil(yPosInM / postHeight) - 1;
+		matrixRow = Math.ceil(yPosInM / postHeight) - 1,
+		elementIndex = (matrixRow * postsPerRow) + matrixCell,
+		elementUnderCoordinates = m.cells[elementIndex];
 
-            return m.cells[(matrixRow * postsPerRow) + matrixCell];
+	    if (!elementUnderCoordinates) { // no element found in the this matrix for the given coordinates
+		    return;
+	    }
+
+	    elementUnderCoordinates.index = generateIndex(i, elementIndex);
+            return elementUnderCoordinates;
         },
         getTotalHeight: getTotalHeight
     };

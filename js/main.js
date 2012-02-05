@@ -29,6 +29,7 @@ window.fbAsyncInit = function () {
         FETCH_ALL_DEFAULT = false,
         VIDEO_WIDTH = 385,
         VIDEO_HEIGHT = 315,
+	yPlayer = youtubePlayer(VIDEO_WIDTH, VIDEO_HEIGHT, 'youtubeEmbed'),
 	currentService,
 	mainContainer = $("#main"),
         box = $("#box"),
@@ -68,7 +69,7 @@ window.fbAsyncInit = function () {
 
 		return {
 			log: function (message) {
-				add(message, 'black');
+				add(message, '#EAEAEA');
 			}
 		};
 	}($("#logs"))),
@@ -271,7 +272,50 @@ window.fbAsyncInit = function () {
 				el.css('display', 'none');
 			}
 		}
-	}());
+	}()),
+	constructVideoModalContents = function (element) {
+		var modalContents = $("<div/>"), 
+		    videoContainer = $("<div/>").attr('id', 'youtubeEmbed'),
+		    link = userLink[serviceName] + element.poster.id, 
+		    postedBy = $("<p/>").css({ 'padding-top': 5, float: 'right' }).html('Posted by <a href="' + link + '" target="_blank">' + element.poster.name + '</a>'),
+		    postedDate = $("<p/>").addClass('post-date').html(currentService.formatTime(element.created));
+
+		modalContents.append(videoContainer);
+		modalContents.append(postedBy);
+		modalContents.append(postedDate);
+
+		return modalContents;
+        }, addVideoToModalDialog = function (dialog, element, autoPlay) {
+		    var videoID = youtubeEmbedBuilder.getVideoID(element.url);
+
+		    yPlayer.add(videoID, autoPlay, function () {
+			    var nextVideo = matrices.getNextElement(element.index);
+			    if (!nextVideo) { // This video was the last one
+				    return;
+			    }
+
+			    dialog.html('').append(constructVideoModalContents(nextVideo));
+			    dialog.dialog({title: nextVideo.name});
+			    addVideoToModalDialog(dialog, nextVideo, true);
+		    });
+	}, showVideoModalDialog = function (element, autoPlay) {
+		var dialog = constructVideoModalContents(element).dialog({
+			    title: element.name,
+			    modal: true,
+			    closeOnEscape: true,
+			    width: 420,
+			    height: 411,
+			    resizable: false,
+			    open: function (){
+			    	addVideoToModalDialog($(this), element, autoPlay);
+			    },
+			    close: function () {
+				    lastElementClicked.actionDone = false; // reset it so that an action request can be sent next time this video is opened in the dialog again.
+				    dialog.remove();
+			    }
+		});
+		
+	};
 
     FB.init({ appId: APP_ID, status: true, cookie: true, xfbml: true, oauth: true });
 
@@ -303,36 +347,17 @@ window.fbAsyncInit = function () {
         }
     });
 
+
     box.click(function (e) {
-        var element = matrices.getElementUnderMouse(e.pageX, e.pageY), modalContents = $("<div/>"), youtubeElement, postedDate, link;
+        var element = matrices.getElementUnderMouse(e.pageX, e.pageY);
 
         if (!element) {
             return;
         }
-	
+
 	lastElementClicked = element;
-	link = userLink[serviceName] + element.poster.id;
 
-        postedDate = $("<p/>").addClass('post-date').html(currentService.formatTime(element.created));
-        youtubeElement = youtubeEmbedBuilder.build(element.url, VIDEO_WIDTH, VIDEO_HEIGHT);
-        modalContents.append(youtubeElement);
-        modalContents.append($("<p/>").css({ 'padding-top': 5, float: 'right' }).html('Posted by <a href="' + link + '" target="_blank">' + element.poster.name + '</a>'));
-        modalContents.append(postedDate);
-
-	(function () {
-		var dialog = modalContents.dialog({
-			    title: element.name,
-			    modal: true,
-			    closeOnEscape: true,
-			    width: 420,
-			    height: 411,
-			    resizable: false,
-			    close: function () {
-				    lastElementClicked.actionDone = false; // reset it so that an action request can be sent next time this video is opened in the dialog again.
-				    dialog.remove();
-			    }
-		});
-	}());
+	showVideoModalDialog(element, false);
     });
 
     $("#query").watermark("ID").val(queryStringValues.id);

@@ -9,7 +9,7 @@ var helpers = (function () {
 
             return y;
         },
-        createCanvas : function (width, height) {
+        createCanvas: function (width, height) {
             var canvas = document.createElement('canvas');
             canvas.className += "canvas";
             canvas.width = width;
