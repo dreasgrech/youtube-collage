@@ -180,3 +180,19 @@ a:visited {
 #search {
 	text-align:center;
 }
+
+.playerButton {
+	width: 30px;
+	height: 30px;
+	cursor: pointer;
+}
+
+#nextButton {
+	background: url(../img/arrows/next.png);
+	float: right;
+}
+
+#previousButton {
+	background: url(../img/arrows/previous.png);
+	float: left;
+}

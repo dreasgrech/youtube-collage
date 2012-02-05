@@ -19,6 +19,12 @@ var matrixCollection = function (box, postWidth, postHeight, postsPerRow) {
 	generateIndex = function (matrixIndex, elementIndex) {
 	    return (matrixIndex << 8) + elementIndex;
 	},
+	applyIndexes = function (matrixIndex) {
+		var theMatrix = list[matrixIndex], i = 0, j = theMatrix.cells.length;
+		for (; i < j; ++i) {
+			theMatrix.cells[i].index = generateIndex(matrixIndex, i);
+		}
+	},
 	getElementFromIndex = function (index) {
 		var expandedIndex = expandIndex(index), thisMatrix = list[expandedIndex.matrixIndex];
 		if (!thisMatrix) {
@@ -31,22 +37,38 @@ var matrixCollection = function (box, postWidth, postHeight, postsPerRow) {
     return {
         push: function (m) {
             list.push(m);
+	    applyIndexes(list.length - 1);
         },
         elementAt: function (n) {
             return list[n];
         },
         modifyCells: function (n, newCells) {
             list[n].cells = newCells;
+	    applyIndexes(n);
         },
         length: function () {
             return list.length;
+        },
+	getPreviousElement: function (index) {
+		var expandedIndex = expandIndex(index),
+		    matrixIndex = expandedIndex.matrixIndex,
+		    elementIndex = expandedIndex.elementIndex;
+
+		if (!elementIndex) { // the first element in the matrix
+			matrixIndex--;
+			elementIndex = list[matrixIndex].cells.length - 1;
+		} else {
+			elementIndex--;
+		}
+
+		return getElementFromIndex(generateIndex(matrixIndex, elementIndex));
         },
 	getNextElement: function (index) {
 		var expandedIndex = expandIndex(index),
 		    matrixIndex = expandedIndex.matrixIndex,
 		    elementIndex = expandedIndex.elementIndex;
 
-		if (elementIndex === list[expandedIndex.matrixIndex].cells.length - 1) { // the last element in the matrix
+		if (elementIndex === list[matrixIndex].cells.length - 1) { // the last element in the matrix
 			matrixIndex++;
 			elementIndex = 0;
 		} else {
@@ -81,7 +103,7 @@ var matrixCollection = function (box, postWidth, postHeight, postsPerRow) {
 		    return;
 	    }
 
-	    elementUnderCoordinates.index = generateIndex(i, elementIndex);
+	    //elementUnderCoordinates.index = generateIndex(i, elementIndex);
             return elementUnderCoordinates;
         },
         getTotalHeight: getTotalHeight

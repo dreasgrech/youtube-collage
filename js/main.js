@@ -34,6 +34,8 @@ window.fbAsyncInit = function () {
 	mainContainer = $("#main"),
         box = $("#box"),
         serviceSelect = $("#serviceSelect"),
+	nextButton = $("<div/>").attr({id :'nextButton', title: 'Next video'}).addClass('playerButton'),
+	previousButton = $("<div/>").attr({id :'previousButton', title: 'Previous video'}).addClass('playerButton'),
         lastCtx, // the last canvas context that we drew on
         bodyWidth = $('body').innerWidth() - $.getScrollbarWidth(),
 	elementInfo = pojo('icon', 'name', 'description', 'link'),
@@ -56,6 +58,7 @@ window.fbAsyncInit = function () {
 	serviceName = queryStringValues.service || SERVICE_DEFAULT,
 	matrices = matrixCollection(box, postWidth, postHeight, postsPerRow),
 	lastElementClicked,
+	lastDialogOpened,
 	userLink = {
 		youtube :'http://www.youtube.com/user/',
 		facebook :'http://www.facebook.com/'
@@ -278,40 +281,64 @@ window.fbAsyncInit = function () {
 		    videoContainer = $("<div/>").attr('id', 'youtubeEmbed'),
 		    link = userLink[serviceName] + element.poster.id, 
 		    postedBy = $("<p/>").css({ 'padding-top': 5, float: 'right' }).html('Posted by <a href="' + link + '" target="_blank">' + element.poster.name + '</a>'),
-		    postedDate = $("<p/>").addClass('post-date').html(currentService.formatTime(element.created));
+		    postedDate = $("<p/>").addClass('post-date').html(currentService.formatTime(element.created)),
+		    buttonContainer = $("<div/>"),
+		    next = nextButton.clone(),
+		    previous = previousButton.clone();
+
+		    next.click(function () {
+			    addVideoToModalDialog(lastDialogOpened, getNextVideo(), true);
+		    });
+
+		    previous.click(function () {
+			    addVideoToModalDialog(lastDialogOpened, getPreviousVideo(), true);
+		    });
+
+		buttonContainer.append(previous);
+		buttonContainer.append(next);
 
 		modalContents.append(videoContainer);
 		modalContents.append(postedBy);
 		modalContents.append(postedDate);
+		modalContents.append($("<div/>").addClass("toclear"));
+		modalContents.append(buttonContainer);
 
 		return modalContents;
+        }, getPreviousVideo = function () {
+		return matrices.getPreviousElement(lastElementClicked.index);
+        }, getNextVideo = function () {
+		return matrices.getNextElement(lastElementClicked.index);
         }, addVideoToModalDialog = function (dialog, element, autoPlay) {
+		    if (!element) {
+			return;
+		    }
+
 		    var videoID = youtubeEmbedBuilder.getVideoID(element.url);
 
-		    yPlayer.add(videoID, autoPlay, function () {
-			    var nextVideo = matrices.getNextElement(element.index);
+		    dialog.html('').append(constructVideoModalContents(element));
+		    dialog.dialog({title: element.name});
+		    lastElementClicked = element;
+		    yPlayer.add(videoID, autoPlay, function () { // Play the next video once this one finishes
+			    var nextVideo = getNextVideo();
 			    if (!nextVideo) { // This video was the last one
 				    return;
 			    }
 
-			    dialog.html('').append(constructVideoModalContents(nextVideo));
-			    dialog.dialog({title: nextVideo.name});
 			    addVideoToModalDialog(dialog, nextVideo, true);
 		    });
 	}, showVideoModalDialog = function (element, autoPlay) {
-		var dialog = constructVideoModalContents(element).dialog({
-			    title: element.name,
+		lastDialogOpened = constructVideoModalContents(element).dialog({
 			    modal: true,
 			    closeOnEscape: true,
 			    width: 420,
-			    height: 411,
+			    height: 441,
 			    resizable: false,
 			    open: function (){
 			    	addVideoToModalDialog($(this), element, autoPlay);
 			    },
 			    close: function () {
 				    lastElementClicked.actionDone = false; // reset it so that an action request can be sent next time this video is opened in the dialog again.
-				    dialog.remove();
+				    lastDialogOpened.remove();
 			    }
 		});
 		
@@ -355,7 +382,6 @@ window.fbAsyncInit = function () {
             return;
         }
 
-	lastElementClicked = element;
 
 	showVideoModalDialog(element, false);
     });
@@ -386,6 +412,7 @@ window.fbAsyncInit = function () {
     });
 
     currentService = getServiceFromName(serviceName);
+
 
     facebook.isLoggedIn(function (accessToken) {  /// TODO: this callback is not always being invoked?
 	facebook.setLoggedIn(accessToken);

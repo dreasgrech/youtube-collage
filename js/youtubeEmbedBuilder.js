@@ -1,3 +1,4 @@
+// TODO: Apart from the methods that get the ID, this function is pretty much obsolete now, since I started building the videos with swfobject
 var youtubeEmbedBuilder = (function () {
         var isShortLink = function (link) {
             return link.indexOf('youtu\.be') >= 0; // TODO: use regular expressions for better matching
@@ -15,17 +16,6 @@ var youtubeEmbedBuilder = (function () {
         };
 
     return {
-        build: function (link, width, height) {
-            var embedLink = 'http://www.youtube.com/v/' + getVideoID(link),
-		container = $("<div/>").attr('id', 'youtubeEmbed'),
-                embed = $('<object id="youtubeEmbed" type="application/x-shockwave-flash" data="' + embedLink + '?version=3"/>').css({width: width, height: height});
-            embed.append($('<param name="movie" value="' + embedLink + '?version=3" />'));
-            embed.append($('<param name="allowFullScreen" value="true" />'));
-            embed.append($('<param name="wmode" value="transparent" />'));
-            embed.append($('<param name="allowscriptaccess" value="always" />'));
-	    //container.append(embed); // TODO: working on it
-            return container;
-        },
         isYoutubeLink: function (link) {
             if (isShortLink(link)) {
                 return true;
