@@ -88,9 +88,6 @@ var service = function (matrices, postsPerRow, box, bodyWidth, postWidth, postHe
 		    logger.log('Fetching from ' + url);
 		}
             },
-            buildTitle = function (name) {
-                return "YouTube Collage - " + name;
-            },
             obj = {
                 getValidLinks: function (links) {
                     throw "No override";
@@ -108,7 +105,7 @@ var service = function (matrices, postsPerRow, box, bodyWidth, postWidth, postHe
                 fetch: fetch,
                 renderInfo: function (info) {
                     info.icon && $("#favicon").attr('href', info.icon);
-                    $("title").html(buildTitle(info.name));
+		    titleBuilder.setObjectTitle(info.name);
                     $("#grouptitle").html(info.name);
                     $("#groupdescription").html(info.description);
                     $("#grouplink").attr('href', info.link);

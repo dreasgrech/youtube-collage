@@ -314,6 +314,7 @@ window.fbAsyncInit = function () {
 		    }
 
 		    var videoID = youtubeEmbedBuilder.getVideoID(element.url);
+		    titleBuilder.setVideoTitle(element.name);
 
 		    dialog.html('').append(constructVideoModalContents(element));
 		    dialog.dialog({title: element.name});
@@ -339,6 +340,7 @@ window.fbAsyncInit = function () {
 			    close: function () {
 				    lastElementClicked.actionDone = false; // reset it so that an action request can be sent next time this video is opened in the dialog again.
 				    lastDialogOpened.remove();
+				    titleBuilder.setVideoTitle(); // Remove the video name from the title of the page
 			    }
 		});
 		
@@ -374,14 +376,12 @@ window.fbAsyncInit = function () {
         }
     });
 
-
     box.click(function (e) {
         var element = matrices.getElementUnderMouse(e.pageX, e.pageY);
 
         if (!element) {
             return;
         }
-
 
 	showVideoModalDialog(element, false);
     });
