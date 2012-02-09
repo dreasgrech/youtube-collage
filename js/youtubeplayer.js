@@ -24,7 +24,7 @@
             add: function (videoID, autoStart, onFinishCallback) {
                 onFinish = onFinishCallback;
 		autoStartVideo = autoStart;
-                swfobject.embedSWF("http://www.youtube.com/v/" + videoID + "?enablejsapi=1&playerapiid=" + playerID + "&version=3", "youtubeEmbed", width, height, "8", null, null, { allowScriptAccess: "always" }, { id: playerID });
+                swfobject.embedSWF("http://www.youtube.com/v/" + videoID + "?enablejsapi=1&playerapiid=" + playerID + "&version=3", "youtubeEmbed", width, height, "8", null, null, { allowScriptAccess: "always", wmode: "transparent" }, { id: playerID });
             }
         };
     };
