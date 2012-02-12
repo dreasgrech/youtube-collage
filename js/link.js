@@ -1,5 +1,6 @@
-var link = function (created, name, url, posterID, posterName) {
+var link = function (id, created, name, url, posterID, posterName) {
 	return {
+        id: id,
 		created: created,
 		name: name,
 		url: url,
