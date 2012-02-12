@@ -154,7 +154,8 @@ window.fbAsyncInit = function() {
 	facebook = (function() {
 		var base = service(matrices, postsPerRow, box, bodyWidth, postWidth, postHeight, loader, logger, fetchAll),
 		token,
-		isLoggedIn;
+		isLoggedIn,
+        cachedPermalinks = {};
 
 		base.setLoggedIn = function(accessToken) {
 			if (!accessToken) {
@@ -237,11 +238,17 @@ window.fbAsyncInit = function() {
 		};
 
         base.getPermalink = function (id, callback) {
+            if (cachedPermalinks[id]) {
+                callback(cachedPermalinks[id]);
+                return;
+            }
+
             FB.api({
                 method: 'fql.query',
                 query: 'select permalink from stream where post_id="' + id + '"'
             },
             function(data) {
+                cachedPermalinks[id] = data[0].permalink;
                 callback(data[0].permalink);
             });
         };
@@ -438,6 +445,20 @@ window.fbAsyncInit = function() {
 		showVideoModalDialog(element, false);
 	});
 
+    box.mousedown(function(e) {
+        var element;
+        if (e.which === 2) { // Mouse middle click
+            element = matrices.getElementUnderMouse(e.pageX, e.pageY);
+            currentService.getPermalink(element.id, function (permalink) {
+                // TODO: in here I should probably record a watch action since
+                // the user is opening the video in a new page to view it,
+                // and that counts as a view.
+                window.open(permalink);
+            });
+            return;
+        }
+    });
+
 	$("#query").watermark("ID").val(queryStringValues.id);
 	$("#videosPerRow").watermark("Videos per row").val(queryStringValues.postsPerRow);
 
@@ -465,7 +486,7 @@ window.fbAsyncInit = function() {
 
 	currentService = getServiceFromName(serviceName);
 
-	facebook.isLoggedIn(function(accessToken) { /// TODO: this callback is not always being invoked?
+	facebook.isLoggedIn(function(accessToken) {
 		facebook.setLoggedIn(accessToken);
 		if (!accessToken && serviceName === "facebook") { // user is trying to see videos from Facebook but is not logged in, so he can't
 			error.show("You are trying to view videos from Facebook. Please login first using the button on the right side.");
